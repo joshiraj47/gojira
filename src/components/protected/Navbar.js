@@ -1,11 +1,11 @@
-import PropTypes from "prop-types";
 
-export const Navbar = (props) => {
+
+export const Navbar = () => {
     return (
         <>
             <nav className="navbar navbar-expand-lg bg-body-tertiary">
                 <div className="container-fluid">
-                    <a className="navbar-brand" href="/">{props.title}</a>
+                    <a className="navbar-brand" href="/">GoJira</a>
                     <button className="navbar-toggler" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
                             aria-expanded="false"
@@ -48,8 +48,4 @@ export const Navbar = (props) => {
             </nav>
         </>
     )
-}
-
-Navbar.propTypes = {
-    title: PropTypes.string.isRequired,
 }

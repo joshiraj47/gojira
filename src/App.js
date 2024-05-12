@@ -7,6 +7,8 @@ import {Signup} from "./components/Signup";
 import {Root} from "./components/Root";
 import axios from "axios";
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
+import {AuthProvider} from "./components/AuthProvider";
+import {ProtectedLayout} from "./components/ProtectedLayout";
 
 axios.defaults.baseURL = 'http://192.168.0.102:4000';
 axios.defaults.withCredentials = true;
@@ -17,12 +19,17 @@ function App() {
   return (
       <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-              <Routes>
-                  <Route path="/" element={<Root/>}>
-                      <Route path="login" element={<Login/>} />
-                      <Route path="register" element={<Signup/>} />
-                  </Route>
-              </Routes>
+              <AuthProvider>
+                  <Routes>
+                      <Route path="/" element={<Root/>}>
+                          <Route path="" element={<ProtectedLayout/>}>
+                              <Route path="dashboard" element={<Signup/>} />
+                          </Route>
+                          <Route path="login" element={<Login/>} />
+                          <Route path="register" element={<Signup/>} />
+                      </Route>
+                  </Routes>
+              </AuthProvider>
           </BrowserRouter>
       </QueryClientProvider>
   );

@@ -16,4 +16,8 @@ const registerUserRequest = async ({name, username, email, password}) => {
     });
 }
 
-export {loginUserRequest, registerUserRequest};
+const getUserProfile = async () => {
+    return await axios.get('/userProfile');
+}
+
+export {loginUserRequest, registerUserRequest, getUserProfile};

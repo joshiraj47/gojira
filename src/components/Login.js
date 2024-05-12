@@ -1,18 +1,18 @@
-import {Link, useNavigate} from "react-router-dom";
+import {Link} from "react-router-dom";
 import {useState} from "react";
 import {isEmpty} from "lodash/fp";
 import {useMutation} from "@tanstack/react-query";
 import {loginUserRequest} from "../apiRequests";
+import {useAuth} from "./AuthProvider";
 
 export const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPass] = useState('');
+    const {login} = useAuth();
 
-    const navigate = useNavigate();
-
-    const {mutate, isPending, isSuccess, isError} = useMutation({
+    const {mutate, isPending, isError} = useMutation({
         mutationFn: loginUserRequest,
-        onSuccess: () => setTimeout(() => navigate('/register'), 1000)
+        onSuccess: () => login()
     });
     function shouldDisableLogin() {
         return [email, password].some((attr) => isEmpty(attr)) || isPending;
