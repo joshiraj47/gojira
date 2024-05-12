@@ -4,7 +4,7 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
 import {useEffect, useState} from "react";
 import {useAuth} from "./AuthProvider";
-import './Header.scss';
+import './Header.css';
 
 
 export const Header = () => {

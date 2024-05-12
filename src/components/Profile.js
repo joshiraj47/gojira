@@ -1,4 +1,4 @@
-import './Profile.scss';
+import './Profile.css';
 import {useAuth} from "./AuthProvider";
 import {useRef} from "react";
 export const Profile = () => {

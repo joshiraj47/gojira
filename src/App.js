@@ -1,4 +1,4 @@
-import './App.scss';
+import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/bootstrap-icons.svg';
 import {BrowserRouter, Route, Routes} from "react-router-dom";
