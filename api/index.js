@@ -30,10 +30,14 @@ app.post("/login", async (req, res) => {
         .then((userDoc) => {
             const isPassCorrect =  bcrypt.compareSync(password, userDoc.password);
             if (isPassCorrect) {
-                jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
-                    if (err) throw err;
-                    return res.cookie("token", token).json("success");
+                console.log(userDoc.email);
+                UserModel.updateOne({email: userDoc.email}, {$set: {lastLogin: new Date().getTime()}}).then((updatedDoc) => {
+                    jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
+                        if (err) throw err;
+                        return res.cookie("token", token).json("success");
+                    });
                 });
+
             } else throw new Error();
         })
         .catch((err) => res.status(401).send(err.errorResponse));
@@ -45,7 +49,9 @@ app.post("/registerUser", async (req, res) => {
         name,
         username,
         email,
-        password: bcrypt.hashSync(password, bcryptSalt)
+        password: bcrypt.hashSync(password, bcryptSalt),
+        dateCreated: new Date().getTime(),
+        lastLogin: null
     }).then((userDoc) => {
         return res.json(userDoc);
     })
@@ -60,8 +66,8 @@ app.get("/userProfile", (req, res) => {
     if (token) {
         jwt.verify(token, jwtSecret, {}, async (err, decryptedUserModel) => {
             if (err) throw err;
-            const {name, email, _id} = await UserModel.findById(decryptedUserModel.id);
-            res.json({name, email, _id});
+            const {name, email, username, lastLogin, dateCreated} = await UserModel.findById(decryptedUserModel.id);
+            res.json({name, email, username, lastLogin, dateCreated});
         });
     } else {
         res.json(null);

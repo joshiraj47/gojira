@@ -11,9 +11,22 @@ export const Signup = () => {
     const [password, setPass] = useState('');
     const [confirmPass, setConfirmPass] = useState('');
     const [isPassSameAsConfirmPass, setIsPassSameAsConfirmPass] = useState(true);
+    const [isEmailValid, setIsEmailValid] = useState(true);
+
     useEffect(() => {
-        setIsPassSameAsConfirmPass(isEmpty(confirmPass) || (!isEmpty(confirmPass) && password === confirmPass));
+        setIsPassSameAsConfirmPass(isEmpty(confirmPass) || password === confirmPass);
     }, [confirmPass, password]);
+
+    useEffect(() => {
+        setIsEmailValid(isEmpty(email) || validateEmail(email));
+    }, [email]);
+
+    const validateEmail = (email) => {
+        const validEmail = new RegExp(
+            '^[a-zA-Z0-9._:$!%-]+@[a-zA-Z0-9.-]+.[a-zA-Z]$'
+        );
+        return validEmail.test(email);
+    };
 
     const navigate = useNavigate();
 
@@ -27,7 +40,7 @@ export const Signup = () => {
     }
 
     function shouldDisableSubmit() {
-        return [name, username, email, password, confirmPass].some((attr) => isEmpty(attr)) || !isPassSameAsConfirmPass || isPending || isSuccess;
+        return [name, username, email, password, confirmPass].some((attr) => isEmpty(attr)) || !isPassSameAsConfirmPass || !isEmailValid || isPending || isSuccess;
     }
 
     function registerUser(e) {
@@ -107,9 +120,13 @@ export const Signup = () => {
                                             <div data-mdb-input-init="" className="form-outline form-white mb-4">
                                                 <label htmlFor="email"
                                                        className="float-start fw-bold mb-1">Email</label>
-                                                <input required type="email" id="email" value={email}
-                                                       onChange={(e) => setEmail(e.target.value)}
-                                                       className="form-control form-control-lg"/>
+                                                <div className="input-group">
+                                                    <input required type="email" id="email" value={email}
+                                                           onChange={(e) => setEmail(e.target.value)}
+                                                           className={"form-control form-control-lg " + (!isEmailValid ? 'is-invalid' : '')}/>
+                                                    {!isEmailValid && (
+                                                        <small className="float-start invalid-feedback mb-3">Please enter a valid email!</small>)}
+                                                </div>
                                             </div>
 
                                             <div data-mdb-input-init="" className="form-outline form-white mb-4">

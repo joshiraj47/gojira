@@ -1,25 +1,34 @@
-import {Link} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import Button from 'react-bootstrap/Button';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Modal from 'react-bootstrap/Modal';
 import {useEffect, useState} from "react";
 import {useAuth} from "./AuthProvider";
-import './Header.css';
+import './Header.scss';
 
 
 export const Header = () => {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [doLogout, setDoLogout] = useState(false);
+    const [navigateToProfile, setNavigateToProfile] = useState(false);
     const {logout} = useAuth();
+    const navigate = useNavigate();
     useEffect(() => {
         if (doLogout) logout();
     }, [doLogout, logout]);
+    useEffect(() => {
+        if (navigateToProfile) navigate('/profile');
+    }, [navigate, navigateToProfile]);
     const handleClose = () => setShowLogoutModal(false);
     const handleShow = () => setShowLogoutModal(true);
+    const handleNavigateToProfile = (e) => {
+        e.preventDefault();
+        setNavigateToProfile(true);
+    }
     const handleLogout = () => setDoLogout(true);
     return (
         <>
-            <nav className="navbar navbar-dark jiraBlue p-0" style={{height: '41px'}}>
+            <nav className="navbar navbar-dark jiraBlue p-0">
                 <div className="container-fluid">
                     <Link className="navbar-brand" to="/">GoJira</Link>
                     <Dropdown>
@@ -33,13 +42,14 @@ export const Header = () => {
                         </Dropdown.Toggle>
 
                         <Dropdown.Menu>
-                            <Dropdown.Item href="/profile">Profile</Dropdown.Item>
-                                <hr className="dropdown-divider"/>
+                            <Dropdown.Item onClick={handleNavigateToProfile} href="/profile">Profile</Dropdown.Item>
+                            <hr className="dropdown-divider"/>
                             <Dropdown.Item onClick={handleShow}>Logout</Dropdown.Item>
                         </Dropdown.Menu>
                     </Dropdown>
                 </div>
             </nav>
+            <div className="gutterDiv bg-body-tertiary">&nbsp;</div>
 
             <Modal show={showLogoutModal} onHide={handleClose}>
                 <Modal.Header closeButton>

@@ -9,12 +9,14 @@ export const AuthProvider = ({children}) => {
     const [user, setUser] = useLocalStorage("user", null);
     const navigate = useNavigate();
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const login = async () => {
         const userData = await getUserProfile();
         setUser(userData.data);
         setTimeout(() => navigate('/'), 1000)
     }
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const logout = () => {
         setUser(null);
         navigate('/login');
@@ -24,7 +26,7 @@ export const AuthProvider = ({children}) => {
         user,
         login,
         logout
-    }), [user]);
+    }), [login, logout, user]);
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

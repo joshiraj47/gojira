@@ -1,0 +1,45 @@
+:root {
+    --aui-avatar-size: 48px;
+}
+.page-header-inner {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    padding: 20px;
+}
+.page-header-main {
+    padding-left: 10px;
+    flex-grow: 1;
+    margin: 0;
+    text-align: left;
+
+    h1 {
+        color: #172b4d;
+        font-weight: 500;
+        font-size: 24px;
+    }
+
+    h2 {
+        font-size: 20px;
+        line-height: 1.5;
+        letter-spacing: -.008em;
+    }
+}
+.avatar-inner {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    height: var(--aui-avatar-size);
+    max-width: var(--aui-avatar-size);
+    max-height: var(--aui-avatar-size);
+    width: var(--aui-avatar-size);
+    border-radius: 100%;
+    overflow: hidden;
+
+    img {
+        height: 100%;
+        display: block;
+        margin: auto;
+        width: 100%;
+    }
+}
