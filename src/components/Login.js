@@ -10,12 +10,12 @@ export const Login = () => {
     const [password, setPass] = useState('');
     const {login} = useAuth();
 
-    const {mutate, isPending, isError} = useMutation({
+    const {mutate, isPending, isSuccess, isError} = useMutation({
         mutationFn: loginUserRequest,
         onSuccess: () => login()
     });
     function shouldDisableLogin() {
-        return [email, password].some((attr) => isEmpty(attr)) || isPending;
+        return [email, password].some((attr) => isEmpty(attr)) || isPending || isSuccess;
     }
     function loginUser(e) {
         e.preventDefault();

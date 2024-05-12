@@ -1,7 +1,8 @@
 import {Outlet, useNavigate} from "react-router-dom";
-import {Navbar} from "./protected/Navbar";
-import {useAuth} from "./AuthProvider";
+
 import {useEffect} from "react";
+import {useAuth} from "./AuthProvider";
+import {Header} from "./Header";
 
 export const ProtectedLayout = () => {
     const {user} = useAuth();
@@ -11,7 +12,7 @@ export const ProtectedLayout = () => {
     }, [navigate, user]);
     return (
         <div>
-            <Navbar/>
+            <Header/>
             <Outlet />
         </div>
     );

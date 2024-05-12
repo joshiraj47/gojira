@@ -12,7 +12,7 @@ export const AuthProvider = ({children}) => {
     const login = async () => {
         const userData = await getUserProfile();
         setUser(userData.data);
-        setTimeout(() => navigate('/dashboard'), 1000)
+        setTimeout(() => navigate('/'), 1000)
     }
 
     const logout = () => {
