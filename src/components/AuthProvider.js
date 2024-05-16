@@ -20,6 +20,7 @@ export const AuthProvider = ({children}) => {
     const logout = () => {
         setUser(null);
         navigate('/login');
+        return Promise.resolve();
     }
 
     const value = useMemo(() => ({

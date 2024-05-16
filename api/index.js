@@ -3,6 +3,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 const cookieParser = require('cookie-parser');
 const UserModel = require("./models/User");
 require('dotenv').config();
@@ -17,6 +19,7 @@ app.use(cors({
     credentials: true,
     origin: 'http://192.168.0.102:3000'
 }));
+app.use('/images', express.static('../src/avatars'))
 
 mongoose.connect(process.env.MONGO_URL);
 
@@ -72,6 +75,63 @@ app.get("/userProfile", (req, res) => {
     } else {
         res.json(null);
     }
+});
+
+app.get("/defaultAvatars", (req, res) => {
+    const directoryPath = '../src/avatars';
+    fs.readdir(directoryPath, (err, files) => {
+        if (err) {
+            return res.status(500).json({ error: err });
+        }
+
+        // Send the list of files as a JSON response
+        let i = 0;
+        files = files.map(file => {
+            return {
+                name: file,
+                id: i++,
+            }
+        })
+        res.json({ files });
+    });
 })
+
+app.get("/userAvatar", (req, res) => {
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return UserModel.findById(userData.id);
+        })
+        .then((data) => {
+            return res.json({avatar: data.avatar});
+        });
+});
+
+app.put("/userAvatar/update", (req, res) => {
+    const {avatarName} = req.body;
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return UserModel.findById(userData.id);
+        })
+        .then((data) => {
+            UserModel.updateOne({email: data.email}, {$set: {avatar: avatarName}}).then((updatedDoc) => {
+                return res.json("success");
+            });
+        });
+});
+
+function checkCookieTokenAndReturnUserData(request) {
+    const {token} = request.cookies;
+    return new Promise((resolve, reject) => {
+        if (token) {
+            jwt.verify(token, jwtSecret, {},(err, decryptedUserModel) => {
+                if (err) reject(err);
+                resolve(decryptedUserModel);
+            });
+        } else {
+            reject('No token found');
+        }
+    });
+}
+
 
 app.listen(4000);

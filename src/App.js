@@ -1,5 +1,6 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import 'react-toastify/dist/ReactToastify.min.css';
 import 'bootstrap-icons/bootstrap-icons.svg';
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {Login} from "./components/Login";
@@ -10,6 +11,7 @@ import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {AuthProvider} from "./components/AuthProvider";
 import {ProtectedLayout} from "./components/ProtectedLayout";
 import {Profile} from "./components/Profile";
+import {ToastContainer} from "react-toastify";
 
 axios.defaults.baseURL = 'http://192.168.0.102:4000';
 axios.defaults.withCredentials = true;
@@ -19,6 +21,7 @@ const queryClient = new QueryClient();
 function App() {
   return (
       <QueryClientProvider client={queryClient}>
+          <ToastContainer autoClose={4000}/>
           <BrowserRouter>
               <AuthProvider>
                   <Routes>

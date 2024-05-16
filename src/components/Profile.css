@@ -43,3 +43,44 @@
         width: 100%;
     }
 }
+.cursor{
+    cursor: pointer;
+}
+
+.form-body {
+    overflow: auto;
+    padding: 4px;
+}
+
+.jira-avatars {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+
+    .jira-avatar{
+        cursor: pointer;
+        display: inline-block;
+        position: relative;
+    }
+    .jira-icon-button{
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        line-height: 1;
+        margin: 0;
+        padding: 0;
+    }
+
+    img {
+        margin: 3px;
+        padding: 2px;
+        border: 2px solid transparent;
+        vertical-align: middle;
+        border-radius: 50%;
+
+        &:hover {
+            border: 2px solid black;
+            box-shadow: 3px 3px 3px darkgrey;
+        }
+    }
+}

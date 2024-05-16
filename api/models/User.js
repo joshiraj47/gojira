@@ -7,7 +7,8 @@ const UserSchema = new Schema({
     email: {type: String, unique: true},
     password: String,
     dateCreated: String,
-    lastLogin: String
+    lastLogin: String,
+    avatar: String,
 });
 
 const UserModel = mongoose.model('User', UserSchema);

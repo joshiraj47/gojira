@@ -5,6 +5,7 @@ import Modal from 'react-bootstrap/Modal';
 import {useEffect, useState} from "react";
 import {useAuth} from "./AuthProvider";
 import './Header.css';
+import {toast} from "react-toastify";
 
 
 export const Header = () => {
@@ -14,7 +15,13 @@ export const Header = () => {
     const {logout} = useAuth();
     const navigate = useNavigate();
     useEffect(() => {
-        if (doLogout) logout();
+        if (doLogout) toast.promise(
+            logout,
+            {
+                success: 'Logged out successfully',
+            },
+            {pauseOnHover: false}
+        )
     }, [doLogout, logout]);
     useEffect(() => {
         if (navigateToProfile) navigate('/profile');
