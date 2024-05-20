@@ -1,0 +1,45 @@
+.createProject {
+    display: flex;
+    -webkit-box-pack: center;
+    justify-content: center;
+
+    .project-form {
+        width: 100%;
+        max-width: 640px;
+    }
+
+    .heading {
+        padding: 6px 0px 15px;
+        font-size: 24px;
+        font-family: Georgia, serif;
+        font-weight: normal;
+    }
+
+    .form-label-custom {
+        display: block;
+        padding-bottom: 5px;
+        color: rgb(94, 108, 132);
+        font-weight: normal;
+        font-size: 13px;
+    }
+
+    .form-input-div {
+        position: relative;
+        display: inline-block;
+        height: 32px;
+        width: 100%;
+    }
+
+    .form-input {
+        height: 100%;
+        width: 100%;
+        padding: 0 7px;
+        border-radius: 3px;
+        border: 1px solid rgb(223, 225, 230);
+        color: rgb(23, 43, 77);
+        background: rgb(244, 245, 247);
+        transition: background 0.1s ease 0s;
+        font-weight: normal;
+        font-size: 15px;
+    }
+}

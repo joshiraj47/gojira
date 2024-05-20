@@ -1,0 +1,44 @@
+.sidebar {
+    position: fixed;
+    left: 0;
+    height: 100%;
+    width: 4rem;
+    transition: width 0.3s ease;
+}
+.jiraBlue {
+    background-color: #0747a6;
+}
+
+.sidebar:hover {
+    width: 210px;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    padding: 10px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.sidebar ul li a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.sidebar ul li span {
+    display: none;
+}
+
+.sidebar:hover ul li span {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.sidebar ul li:hover {
+    background-color: #0b5ed7;
+}

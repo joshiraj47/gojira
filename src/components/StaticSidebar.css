@@ -1,0 +1,23 @@
+.sidebar-left {
+    left: 4rem;
+    width: 17rem;
+    position: fixed !important;
+    height: 100vh;
+
+    a{
+        color: inherit;
+        text-decoration: inherit;
+
+        &.active {
+            fill: #2563eb;
+            --tw-text-opacity: 1;
+            color: rgb(37 99 235 / var(--tw-text-opacity));
+            --tw-bg-opacity: 1;
+            background-color: rgb(229 231 235 / var(--tw-bg-opacity));
+        }
+    }
+
+    .bi-kanban:hover {
+        color: lightblue;
+    }
+}
