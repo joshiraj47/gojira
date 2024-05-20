@@ -1,3 +1,7 @@
+.my-header {
+    height: 42px;
+    align-content: center;
+}
 .jiraBlue {
     background-color: #0747a6;
 }

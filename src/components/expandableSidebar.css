@@ -11,6 +11,7 @@
 
 .sidebar:hover {
     width: 210px;
+    box-shadow: 7px 1px 20px darkgrey;
 }
 
 .sidebar ul {
@@ -28,6 +29,7 @@
 .sidebar ul li a {
     color: #fff;
     text-decoration: none;
+    line-height: 25px;
 }
 
 .sidebar ul li span {
@@ -41,4 +43,15 @@
 
 .sidebar ul li:hover {
     background-color: #0b5ed7;
+}
+
+.create-font {
+    position: relative;
+    right: 12px;
+    vertical-align: top;
+    text-transform: uppercase;
+    font-weight: normal;
+    font-size: 14px;
+    transition: all 0.1s ease 0s;
+    transform: translateZ(0px);
 }

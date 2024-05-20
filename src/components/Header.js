@@ -35,7 +35,7 @@ export const Header = () => {
     const handleLogout = () => setDoLogout(true);
     return (
         <>
-            <nav className="navbar navbar-dark jiraBlue">
+            <nav className="navbar navbar-dark jiraBlue my-header">
                 <div className="container-fluid">
                     <Link className="navbar-brand fs-4" to="/">GoJira</Link>
                     <Dropdown>

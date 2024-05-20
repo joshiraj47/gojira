@@ -11,8 +11,7 @@
     .heading {
         padding: 6px 0px 15px;
         font-size: 24px;
-        font-family: Georgia, serif;
-        font-weight: normal;
+        font-weight: bolder;
     }
 
     .form-label-custom {
@@ -41,5 +40,35 @@
         transition: background 0.1s ease 0s;
         font-weight: normal;
         font-size: 15px;
+    }
+
+    .ql-editor {
+        min-height: 250px;
+    }
+
+    .dropdown-menu {
+        width: 100%;
+
+        .dropdown-item:hover {
+            background: rgb(210, 229, 254);
+        }
+    }
+}
+#dropdown-menu {
+    &.btn {
+        display: flex;
+        justify-content: space-between;
+        background: rgb(244, 245, 247);
+        width: 100%;
+        color: black;
+        align-items: center;
+        border-radius: 3px;
+        border: 1px solid rgb(223, 225, 230);
+
+        &:focus {
+            outline: none;
+            border: 1px solid rgb(76, 154, 255);
+            box-shadow: rgb(76, 154, 255) 0px 0px 0px 1px;
+        }
     }
 }

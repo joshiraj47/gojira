@@ -3,6 +3,7 @@
     width: 17rem;
     position: fixed !important;
     height: 100vh;
+    font-size: 14px;
 
     a{
         color: inherit;
