@@ -12,6 +12,7 @@ const app = express();
 
 const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecret = 'test1213Secret65754Key';
+const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use(cookieParser());
@@ -155,4 +156,6 @@ function checkCookieTokenAndReturnUserData(request) {
 }
 
 
-app.listen(4000);
+app.listen(PORT, ()=>{
+    console.log(`Running on port ${PORT}`);
+});
