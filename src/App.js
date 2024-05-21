@@ -15,6 +15,7 @@ import {Profile} from "./components/Profile";
 import {ToastContainer} from "react-toastify";
 import {LandingPage} from "./components/LandingPage";
 import {CreateProject} from "./components/CreateProject";
+import {Dashboard} from "./components/Dashboard";
 
 axios.defaults.baseURL = 'http://192.168.0.102:4000';
 axios.defaults.withCredentials = true;
@@ -31,6 +32,7 @@ function App() {
                       <Route path="/" element={<Root/>}>
                           <Route path="" element={<ProtectedLayout/>}>
                               <Route path="" element={<LandingPage/>}>
+                                  <Route path="" element={<Dashboard/>}/>
                                   <Route path="create-project" element={<CreateProject/>}/>
                               </Route>
                               <Route path="profile" element={<Profile/>} />

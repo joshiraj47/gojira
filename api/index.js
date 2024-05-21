@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
-const path = require('path');
 const cookieParser = require('cookie-parser');
 const UserModel = require("./models/User");
+const ProjectModel = require("./models/Project");
 require('dotenv').config();
 const app = express();
 
@@ -116,6 +116,26 @@ app.put("/userAvatar/update", (req, res) => {
             UserModel.updateOne({email: data.email}, {$set: {avatar: avatarName}}).then((updatedDoc) => {
                 return res.json("success");
             });
+        });
+});
+
+app.post("/create-project", async (req, res) => {
+    const {name, category, description} = req.body;
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => UserModel.findById(userData.id))
+        .then(({name: fullName}) => {
+            return ProjectModel.create({
+                name,
+                category,
+                description,
+                creator: fullName
+            }).then((projectDoc) => {
+                const {name, category} = projectDoc;
+                return res.json({name, category});
+            })
+                .catch((err) => {
+                    res.status(409).send(err.errorResponse.errmsg);
+                });
         });
 });
 

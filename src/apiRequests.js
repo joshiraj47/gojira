@@ -44,11 +44,28 @@ const updateUserAvatar = async ({avatarName}) => {
     });
 }
 
+const createProject = async ({ name, category, description }) => {
+    const createProject = axios.post('/create-project', {
+        name,
+        category,
+        description,
+    });
+    return await toast.promise(
+        createProject,
+        {
+            error: 'Failed to create project. Please try again.',
+            success: 'Project created successfully',
+        },
+        {pauseOnHover: false}
+    )
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
     getUserProfile,
     getAllAvatars,
     getUserAvatar,
-    updateUserAvatar
+    updateUserAvatar,
+    createProject
 };

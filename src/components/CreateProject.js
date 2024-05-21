@@ -4,23 +4,33 @@ import {useEffect, useRef, useState} from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import {DropdownButton} from "react-bootstrap";
 import {isEmpty} from "lodash/fp";
+import {useMutation} from "@tanstack/react-query";
+import {createProject as createProjectRequest} from "../apiRequests";
+import {useNavigate} from "react-router-dom";
 export const CreateProject = () => {
     const ref = useRef(null);
     const isMounted = useRef(false);
+    const navigate = useNavigate();
     const [name, setName] = useState('');
     const projectCategories = ['Software', 'Business', 'Marketing'];
     const [selectedCategory, setSelectedCategory] = useState(projectCategories[0]);
     const [description, setDescription] = useState('');
 
+    const {mutate, isPending, isSuccess} = useMutation({
+        mutationFn: createProjectRequest,
+        onSuccess: () => navigate('/')
+    });
+
     const setProjectName = (name) => setName(name);
     const setCategory = (option) => setSelectedCategory(option);
 
     function shouldDisableSubmit() {
-        return ([name, selectedCategory].some(field => isEmpty(field)));
+        return ([name, selectedCategory].some(field => isEmpty(field)) || isPending || isSuccess);
     }
 
-    function createProject() {
-
+    function createProject(e) {
+        e.preventDefault();
+        mutate({name, category: selectedCategory, description});
     }
 
 
@@ -76,7 +86,8 @@ export const CreateProject = () => {
                         <button disabled={shouldDisableSubmit()}
                                 onClick={createProject}
                                 className="btn btn-primary btn-md" type="submit">
-                            Create Project
+                            {(!isSuccess || !isPending) && <span>{!isPending && <span>Create</span>}{isPending && <span>Creating</span>} Project</span>}
+                            {isPending && <span className="spinner-border spinner-border-sm mx-1" role="status"></span>}
                         </button>
                     </div>
 
