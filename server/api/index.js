@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'http://192.168.0.102:3000'
+    origin: 'https://gojira-frontend.vercel.app'
 }));
 app.use('/images', express.static('../src/avatars'))
 
