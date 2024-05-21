@@ -24,7 +24,7 @@ app.use('/images', express.static('../src/avatars'))
 
 mongoose.connect(process.env.MONGO_URL);
 
-app.get("/test", (req, res) => {
+app.get("/", (req, res) => {
     res.json('cool');
 });
 
