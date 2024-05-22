@@ -18,10 +18,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'https://gojira-frontend.vercel.app',
+    origin: 'https://gojira-frontend.onrender.com',
     methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
 }));
-app.use('/images', express.static('../src/avatars'))
+app.use('/images', express.static('../avatars'))
 
 mongoose.connect(process.env.MONGO_URL);
 
@@ -40,7 +40,7 @@ app.post("/login", async (req, res) => {
                     jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
                         if (err) throw err;
                         return res
-                            .cookie("token", token, { withCredentials: true, sameSite: "none", secure: true, httpOnly: true })
+                            .cookie("token", token)
                             .json("success");
                     });
                 });
