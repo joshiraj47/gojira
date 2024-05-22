@@ -1,7 +1,6 @@
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.min.css';
-import 'bootstrap-icons/bootstrap-icons.svg';
 import 'font-awesome/css/font-awesome.min.css';
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {Login} from "./components/Login";
