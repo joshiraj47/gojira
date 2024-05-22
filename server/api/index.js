@@ -82,7 +82,7 @@ app.get("/userProfile", (req, res) => {
 });
 
 app.get("/defaultAvatars", (req, res) => {
-    const directoryPath = '../frontend/src/avatars';
+    const directoryPath = '../avatars';
     fs.readdir(directoryPath, (err, files) => {
         if (err) {
             return res.status(500).json({ error: err });
