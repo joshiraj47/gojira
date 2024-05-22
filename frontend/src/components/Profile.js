@@ -11,7 +11,7 @@ export const Profile = () => {
     const {user} = useAuth();
     const [showAvatarModal, setShowAvatarModal] = useState(false);
     const {data: userAvatarResponse, isFetched, refetch: refetchUserAvatar} = useQuery({queryKey: ["userAvatar"], queryFn: getUserAvatar,});
-    const {data: response, isFetching, isSuccess, refetch} = useQuery({queryKey: ["defaultAvatars"], queryFn: getAllAvatars, enabled: false});
+    const {data: response, isFetching, isSuccess, refetch, isError: defaultAvatarFetchError} = useQuery({queryKey: ["defaultAvatars"], queryFn: getAllAvatars, enabled: false});
     const {mutate, isError} = useMutation({
         mutationFn: updateUserAvatar,
         onSuccess: () => {
@@ -128,6 +128,10 @@ export const Profile = () => {
                                     )
                                 }
                             </ul>
+                        }
+                        {
+                            defaultAvatarFetchError &&
+                            <span>Could not fetch default avatars.</span>
                         }
                     </div>
                     {
