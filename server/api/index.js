@@ -18,7 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'https://gojira-frontend.onrender.com',
+    origin: 'https://gojira-frontend.vercel.app',
     methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
 }));
 app.use('/images', express.static('../avatars'))
@@ -39,7 +39,9 @@ app.post("/login", async (req, res) => {
                 UserModel.updateOne({email: userDoc.email}, {$set: {lastLogin: new Date().getTime()}}).then((updatedDoc) => {
                     jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
                         if (err) throw err;
-                        return res.cookie("token", token).json("success");
+                        return res
+                            .cookie("token", token, { withCredentials: true, sameSite: "none", secure: true, httpOnly: true })
+                            .json("success");
                     });
                 });
 
