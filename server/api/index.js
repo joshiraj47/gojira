@@ -39,9 +39,7 @@ app.post("/login", async (req, res) => {
                 UserModel.updateOne({email: userDoc.email}, {$set: {lastLogin: new Date().getTime()}}).then((updatedDoc) => {
                     jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
                         if (err) throw err;
-                        return res
-                            .cookie("token", token)
-                            .json("success");
+                        return res.cookie("token", token).json("success");
                     });
                 });
 
