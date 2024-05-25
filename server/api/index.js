@@ -7,6 +7,8 @@ const fs = require('fs');
 const cookieParser = require('cookie-parser');
 const UserModel = require("./models/User");
 const ProjectModel = require("./models/Project");
+const ProjectUserModel = require("./models/ProjectUser");
+const {isEmpty} = require("lodash/fp");
 require('dotenv').config();
 const app = express();
 
@@ -52,13 +54,15 @@ app.post("/login", async (req, res) => {
 
 app.post("/registerUser", async (req, res) => {
     const {name, username, email, password} = req.body;
+    const colors = ["#A9294F", "#ED6663", "#389393", "#D82148", "#8C5425", "#6F38C5"];
     return UserModel.create({
         name,
         username,
         email,
         password: bcrypt.hashSync(password, bcryptSalt),
         dateCreated: new Date().getTime(),
-        lastLogin: null
+        lastLogin: null,
+        defaultAvatarBgColor: colors[Math.floor(Math.random() * colors.length)]
     }).then((userDoc) => {
         return res.json(userDoc);
     })
@@ -78,6 +82,20 @@ app.get("/userProfile", (req, res) => {
         });
     } else {
         res.json(null);
+    }
+});
+
+app.post("/searchUsers", (req, res) => {
+    const {token} = req.cookies;
+    const {searchTerm, selectedProject: {members} = {}} = req.body;
+    if (token && !isEmpty(searchTerm)) {
+        UserModel.find({'name': {'$regex': searchTerm , '$options': 'i'}}, {name: 1, defaultAvatarBgColor: 1}).then(users => {
+            const memberIds = members.map(member => member.id);
+            users = users?.filter(user => !memberIds.includes(user.id))
+            return res.json({users});
+        });
+    } else {
+        res.json({});
     }
 });
 
@@ -140,6 +158,75 @@ app.post("/create-project", async (req, res) => {
                 .catch((err) => {
                     res.status(409).send(err.errorResponse.errmsg);
                 });
+        });
+});
+
+app.get("/projects", (req, res) => {
+    let projects = [];
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return ProjectModel.find({}, {name:1, category: 1, creator: 1 });
+        })
+        .then((allProjects) => {
+            projects = allProjects;
+            const projectIds = allProjects?.map((project) => project.id);
+            const query = { projectId: { $in: projectIds } };
+            return ProjectUserModel.find(query);
+        })
+        .then((projectsUsers) => {
+            const result = [];
+            projects = projects.map(project => ({
+                id: project.id,
+                name: project.name,
+                category: project.category,
+                creator: project.creator,
+                users: projectsUsers.map((item) => (item.projectId === project.id) && item.userId)
+            }));
+
+            projects?.forEach(project => {
+                const projectWithMemberDetails = {
+                    id: project.id,
+                    name: project.name,
+                    category: project.category,
+                    creator: project.creator,
+                };
+                const memberIdsArray = projectsUsers.map((item) => (item.projectId === project.id) && item.userId);
+                const membersPromises = memberIdsArray?.map((memberId) => UserModel.findById(memberId, {name:1, defaultAvatarBgColor: 1}));
+                Promise.all(membersPromises).then((resultArray) => {
+                    projectWithMemberDetails.members = resultArray?.map((user)=> ({
+                        name: user.name,
+                        avatarBgColor: user.defaultAvatarBgColor,
+                        id: user.id
+                    }));
+                    result.push(projectWithMemberDetails);
+                    return res.json({projects: result});
+                })
+            });
+        });
+});
+
+app.post("/add-member-to-project", async (req, res) => {
+    const {userId, projectId} = req.body;
+    let projectUserData = null;
+    let project = null;
+    let user = null;
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return ProjectUserModel.create({
+                projectId,
+                userId: userId,
+            })
+        })
+        .then(() => {
+            const query = { projectId };
+            return ProjectUserModel.find(query, {userId: 1, id:0});
+        })
+        .then((userArray) => {
+            projectUserData = prjctUsrData;
+            return ProjectModel.findById(projectId, {name:1, category: 1, creator: 1 });
+        })
+        .then((project) => {
+            return UserModel.findById(projectId, {name:1, category: 1, creator: 1 });
         });
 });
 

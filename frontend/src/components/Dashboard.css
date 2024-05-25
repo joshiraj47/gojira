@@ -1,4 +1,43 @@
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+    background-size: 1000px 100%;
+}
+
 .heading {
     padding: 6px 0 15px;
     font-size: 24px;
+}
+
+.initial-avatar-black-text {
+    & div {
+        color: #555555;
+    }
+    &:hover {
+        border: 1px solid black;
+        box-shadow: 3px 3px 3px darkgrey;
+    }
+}
+
+.inputs {
+    position: relative;
+    & i {
+        position: absolute;
+        top: 12px;
+        left: 6px;
+        color: #b8b9bc;
+    }
+
+    .form-control {
+        text-indent: 15px;
+    }
 }

@@ -9,6 +9,7 @@ const UserSchema = new Schema({
     dateCreated: String,
     lastLogin: String,
     avatar: String,
+    defaultAvatarBgColor: String,
 });
 
 const UserModel = mongoose.model('User', UserSchema);

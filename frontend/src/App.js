@@ -2,6 +2,7 @@ import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.min.css';
 import 'font-awesome/css/font-awesome.min.css';
+import 'react-initials-avatar/lib/ReactInitialsAvatar.css';
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import {Login} from "./components/Login";
 import {Signup} from "./components/Signup";

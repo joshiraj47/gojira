@@ -30,6 +30,14 @@ const getUserProfile = async () => {
     return await axios.get('/userProfile');
 }
 
+const searchUsers = async ({searchTerm, selectedProject}) => {
+    return await axios.post('/searchUsers', {searchTerm, selectedProject});
+}
+
+const addMemberToProject = async ({userId, projectId}) => {
+    return await axios.post('/add-member-to-project', {userId, projectId});
+}
+
 const getAllAvatars = async () => {
     return await axios.get('/defaultAvatars');
 }
@@ -60,6 +68,10 @@ const createProject = async ({ name, category, description }) => {
     )
 }
 
+const getAllProjects = async () => {
+    return await axios.get('/projects');
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
@@ -67,5 +79,7 @@ export {
     getAllAvatars,
     getUserAvatar,
     updateUserAvatar,
-    createProject
+    createProject,
+    getAllProjects,
+    searchUsers
 };
