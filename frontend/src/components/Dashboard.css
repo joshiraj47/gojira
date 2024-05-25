@@ -41,3 +41,21 @@
         text-indent: 15px;
     }
 }
+
+.popover-header {
+    border: none !important;
+    background: transparent !important;
+}
+
+.jira-avatars {
+    li {
+        border: 2px solid transparent;
+        vertical-align: middle;
+        border-radius: 50%;
+
+        &:hover {
+            border: 2px solid black;
+            box-shadow: 1px 1px 1px darkgrey;
+        }
+    }
+}

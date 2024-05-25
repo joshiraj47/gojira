@@ -19,7 +19,7 @@ export const StaticSidebar = () => {
                 </div>
 
                 <div className="w-full px-3">
-                    <div className="flex flex-col items-center w-full mt-3 border-t border-gray-300">
+                    <div className="flex flex-col items-center w-full mt-3 border-t border-gray-300 font-circular-book text-gray-700">
                         <Link className="flex items-center w-full h-12 px-5 mt-2 rounded hover:bg-gray-200 hover:fill-blue-600 hover:text-blue-600" to="/">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="25" fill="currentColor"
                                  className="bi bi-kanban" viewBox="0 0 16 20">

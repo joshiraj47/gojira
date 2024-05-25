@@ -1,18 +1,32 @@
-import {OverlayTrigger, Popover, Table} from "react-bootstrap";
+import {OverlayTrigger, Popover, Table, Tooltip} from "react-bootstrap";
 import './Dashboard.css';
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {getAllProjects, searchUsers} from "../apiRequests";
-import {useEffect} from "react";
+import {addMemberToProject, getAllProjects, searchUsers} from "../apiRequests";
+import {useEffect, useState} from "react";
 import InitialsAvatar from 'react-initials-avatar';
 
 export const Dashboard = () => {
     const repeat = (n) => Array.from({ length: n }, (_, i) => i);
     const {data: {data: {projects} = {}} = {}, isSuccess, isFetching, refetch} = useQuery({queryKey: ["projects"], queryFn: getAllProjects, enabled: false});
     let {data: {data: {users} = {}} = {}, mutate} = useMutation({mutationFn: searchUsers, enabled: false});
+    let {mutate: addMemberMutate} = useMutation({mutationFn: addMemberToProject, enabled: false, onSuccess: (data) => setRowData(prevData =>
+            prevData.map(row => (row.id === data?.data?.updatedProject?.id ? { ...row, ...data?.data?.updatedProject } : row))
+        )});
+
+    const [rowData, setRowData] = useState(null);
+    const [searchUserData, setSearchUserData] = useState(null);
 
     useEffect(() => {
         refetch();
     }, [refetch]);
+
+    useEffect(() => {
+        setRowData(projects);
+    }, [projects]);
+
+    useEffect(() => {
+        setSearchUserData(users);
+    }, [users]);
 
     const bgColors = {
         '#A9294F': '!bg-[#A9294F]',
@@ -30,8 +44,12 @@ export const Dashboard = () => {
         mutate({searchTerm, selectedProject});
     }
 
-    function addUserToProject(user, project) {
+    function resetSearchResults() {
+        setSearchUserData([]);
+    }
 
+    function addUserToProject(user, project) {
+        addMemberMutate({userId: user._id, projectId: project.id});
     }
 
     return (
@@ -41,95 +59,167 @@ export const Dashboard = () => {
                 <div>
                     <Table hover>
                         <thead>
-                            <tr className="h-10">
-                                <th className="!bg-gray-50  align-content-center">Project Name</th>
-                                <th className="!bg-gray-50  align-content-center">Project Category</th>
-                                <th className="!bg-gray-50  align-content-center">Creator</th>
-                                <th className="!bg-gray-50  align-content-center">Members</th>
-                                <th className="!bg-gray-50  align-content-center">Action</th>
-                            </tr>
+                        <tr className="h-10">
+                            <th className="!bg-gray-50  align-content-center font-circular-book">Project Name</th>
+                            <th className="!bg-gray-50  align-content-center font-circular-book">Project Category</th>
+                            <th className="!bg-gray-50  align-content-center font-circular-book">Creator</th>
+                            <th className="!bg-gray-50  align-content-center font-circular-book">Members</th>
+                            <th className="!bg-gray-50  align-content-center font-circular-book">Action</th>
+                        </tr>
                         </thead>
                         <tbody>
                         {
                             isFetching &&
                             repeat(10).map((i) => (
                                 <tr key={i} className="h-11">
-                                    <td colSpan='5' className="loading-shimmer text-center">{i === 4 ? 'Fetching projects...' : ''}</td>
+                                    <td colSpan='5'
+                                        className="loading-shimmer text-center">{i === 4 ? 'Fetching projects...' : ''}</td>
                                 </tr>
                             ))
                         }
                         {
-                            !isFetching && isSuccess && projects &&
-                            projects.map(project => (
+                            !isFetching && isSuccess && rowData &&
+                            rowData.map(project => (
                                 <tr key={project.id} className="h-12 cursor">
-                                    <td className="align-content-center !text-blue-600 !font-semibold">{project.name}</td>
-                                    <td className="align-content-center !font-semibold !text-gray-700">{project.category}</td>
-                                    <td className="align-content-center !font-semibold !text-gray-700">{project.creator}</td>
-                                    <td className="align-content-center">
+                                    <td className="align-content-center !font-medium !text-blue-600 font-circular-book">{project.name}</td>
+                                    <td className="align-content-center !font-medium !text-gray-700 font-circular-book">{project.category}</td>
+                                    <td className="align-content-center !font-medium !text-gray-700 font-circular-book">{project.creator}</td>
+                                    <td className="align-content-center font-circular-book">
                                         {
                                             <div className="d-flex align-items-center">
-                                                <span className="flex -space-x-3 overflow-hidden">
-                                                    {
-                                                        project.members?.length <= maxCirclesCount &&
-                                                        project.members?.map((member) => (
-                                                            <InitialsAvatar
-                                                                className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${bgColors[member.avatarBgColor]}`}
-                                                                key={member.name} name={member.name}/>
-                                                        ))
-                                                    }
-                                                    {
-                                                        project.members?.length > maxCirclesCount &&
-                                                        project.members.slice(0, maxCirclesCount)?.map((member) => (
-                                                            <InitialsAvatar
-                                                                className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${bgColors[member.avatarBgColor]}`}
-                                                                key={member.name} name={member.name}/>
-                                                        ))
-                                                    }
-                                                    {
-                                                        project.members?.length > maxCirclesCount &&
-                                                        <InitialsAvatar
-                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold !bg-[#EC871D]`}
-                                                            key='extras'
-                                                            name={`+ ${project.members.slice(maxCirclesCount, project.members?.length).length}`}/>
-                                                    }
-                                                </span>
-                                                <span className="flex -space-x-3 px-0.5 overflow-hidden">
-                                                    {
-
-                                                        <OverlayTrigger
+                                                {
+                                                    <OverlayTrigger
                                                         trigger='click'
-                                                        placement="right-end"
+                                                        placement="top"
                                                         rootClose
                                                         overlay={
                                                             <Popover id="popover-basic">
-                                                                <Popover.Header><span className='font-semibold'>Add Member</span></Popover.Header>
-                                                            <Popover.Body className='p-2'>
-                                                                <div className="inputs">
-                                                                    <i className="fa fa-search"></i>
-                                                                    <input type="text" className="form-control"
-                                                                           onChange={(event) => onSearchUser(event, project)}
-                                                                           placeholder="Search Members..."/>
-                                                                </div>
-                                                                {
-                                                                    users &&
+                                                                <Popover.Body className='p-2'>
                                                                     <div style={{maxHeight: '200px', overflowY: 'auto'}}>
-                                                                        <ul className="list-group pt-1">
+                                                                        <ul className="jira-avatars">
                                                                             {
-                                                                                users?.map((user) => (
-                                                                                    <li className="list-group-item border-0 p-1" onClick={() => addUserToProject(user, project)}>
-                                                                                        <InitialsAvatar
-                                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${bgColors[user.defaultAvatarBgColor]}`}
-                                                                                            key={user.name}
-                                                                                            name={user.name}/>
-                                                                                        <span
-                                                                                            className='pl-1.5'>{user.name}</span>
+                                                                                project.members?.length <= 9 &&
+                                                                                project.members?.map((member) => (
+                                                                                    <li className="jira-avatar p-0.5" key={member.id}>
+                                                                                        <OverlayTrigger trigger={['click', 'hover']} placement="top"
+                                                                                                        overlay={<Tooltip key={member.name} id="tooltip">{member.name}</Tooltip>}
+                                                                                        >
+                                                                                            <div role='button'>
+                                                                                                <InitialsAvatar
+                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                                                    key={member.name} name={member.name}/>
+                                                                                            </div>
+                                                                                        </OverlayTrigger>
                                                                                     </li>
                                                                                 ))
                                                                             }
+                                                                            {
+                                                                                project.members?.length > 9 &&
+                                                                                project.members.slice(0, 9)?.map((member) => (
+                                                                                    <li className="jira-avatar p-0.5"
+                                                                                        key={member.id}>
+                                                                                        <OverlayTrigger trigger={['click', 'hover']} placement="top"
+                                                                                                        overlay={
+                                                                                                            <Tooltip key={member.name} id="tooltip">{member.name}</Tooltip>}
+                                                                                        >
+                                                                                            <div role='button'>
+                                                                                                <InitialsAvatar
+                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                                                    key={member.name}
+                                                                                                    name={member.name}/>
+                                                                                            </div>
+                                                                                        </OverlayTrigger>
+                                                                                    </li>
+                                                                                ))
+                                                                            }
+                                                                            {
+                                                                                project.members?.length > 9 &&
+                                                                                <li className="jira-avatar" key='extra'>
+                                                                                    <InitialsAvatar
+                                                                                        className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book !bg-[#EC871D]`}
+                                                                                        key='extras'
+                                                                                        name={`+ ${project.members.slice(9, project.members?.length).length}`}/>
+                                                                                </li>
+                                                                            }
                                                                         </ul>
                                                                     </div>
+                                                                </Popover.Body>
+                                                            </Popover>
+                                                        }
+                                                    >
+                                                        <div role='button'>
+                                                            <span className="flex -space-x-3 overflow-hidden">
+                                                                {
+                                                                    project.members?.length <= maxCirclesCount &&
+                                                                    project.members?.map((member) => (
+                                                                        <InitialsAvatar
+                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                            key={member.name} name={member.name}/>
+                                                                    ))
                                                                 }
-                                                            </Popover.Body>
+                                                                {
+                                                                    project.members?.length > maxCirclesCount &&
+                                                                    project.members.slice(0, maxCirclesCount)?.map((member) => (
+                                                                        <InitialsAvatar
+                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                            key={member.name} name={member.name}/>
+                                                                    ))
+                                                                }
+                                                                {
+                                                                    project.members?.length > maxCirclesCount &&
+                                                                    <InitialsAvatar
+                                                                        className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book !bg-[#EC871D]`}
+                                                                        key='extras'
+                                                                        name={`+ ${project.members.slice(maxCirclesCount, project.members?.length).length}`}/>
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </OverlayTrigger>
+                                                }
+
+                                                <span className="flex -space-x-3 px-0.5 overflow-hidden">
+                                                    {
+                                                        <OverlayTrigger
+                                                            trigger='click'
+                                                            placement="right-start"
+                                                            onExit={() => resetSearchResults()}
+                                                            rootClose
+                                                            overlay={
+                                                                <Popover id="popover-basic">
+                                                                    <Popover.Header>
+                                                                        <span className='font-bold font-circular-book'>Add Member</span>
+                                                                    </Popover.Header>
+                                                                    <Popover.Body className='p-2'>
+                                                                        <div className="inputs">
+                                                                            <i className="fa fa-search"></i>
+                                                                            <input type="text"
+                                                                                   className="form-control font-circular-book"
+                                                                                   onChange={(event) => onSearchUser(event, project)}
+                                                                                   placeholder="Search Members..."/>
+                                                                        </div>
+                                                                        {
+                                                                            searchUserData &&
+                                                                            <div style={{
+                                                                                maxHeight: '200px',
+                                                                                overflowY: 'auto'
+                                                                            }}>
+                                                                                <ul className="list-group pt-1.5">
+                                                                                    {
+                                                                                        searchUserData?.map((user) => (
+                                                                                            <li className="list-group-item border-0 font-circular-book p-1 cursor" key={user._id} onClick={() => addUserToProject(user, project)}>
+                                                                                            <InitialsAvatar
+                                                                                                className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${bgColors[user.defaultAvatarBgColor]}`}
+                                                                                                key={user.name}
+                                                                                                name={user.name}/>
+                                                                                            <span
+                                                                                                className='pl-1.5'>{user.name}</span>
+                                                                                        </li>
+                                                                                    ))
+                                                                                }
+                                                                            </ul>
+                                                                        </div>
+                                                                    }
+                                                                </Popover.Body>
                                                             </Popover>
                                                         }
                                                         >
@@ -144,12 +234,12 @@ export const Dashboard = () => {
                                             </div>
                                         }
                                     </td>
-                                    <td className="align-content-center !font-semibold !text-gray-700">Nope</td>
+                                    <td className="align-content-center !font-medium font-circular-book !text-gray-700">Nope</td>
                                 </tr>
                             ))
                         }
                         {
-                            !isFetching && isSuccess && !projects &&
+                            !isFetching && isSuccess && !rowData &&
                             <tr className="h-12 cursor">
                                 <td colSpan='5' className="text-center">No projects found...</td>
                             </tr>

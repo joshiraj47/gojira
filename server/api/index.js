@@ -207,26 +207,43 @@ app.get("/projects", (req, res) => {
 
 app.post("/add-member-to-project", async (req, res) => {
     const {userId, projectId} = req.body;
-    let projectUserData = null;
+    let projectUserIds = null;
     let project = null;
     let user = null;
     checkCookieTokenAndReturnUserData(req)
         .then((userData) => {
+            if (isEmpty(userId) || isEmpty(projectId)) throw new Error();
             return ProjectUserModel.create({
                 projectId,
                 userId: userId,
             })
         })
         .then(() => {
-            const query = { projectId };
-            return ProjectUserModel.find(query, {userId: 1, id:0});
+            const query = { projectId: projectId };
+            return ProjectUserModel.find(query, {userId: 1, _id:0});
         })
-        .then((userArray) => {
-            projectUserData = prjctUsrData;
+        .then((userIdObjectsArray) => {
+            projectUserIds = userIdObjectsArray?.map(obj => obj.userId);
             return ProjectModel.findById(projectId, {name:1, category: 1, creator: 1 });
         })
-        .then((project) => {
-            return UserModel.findById(projectId, {name:1, category: 1, creator: 1 });
+        .then((prjct) => {
+            project = prjct;
+            const query = { _id: { $in: projectUserIds } };
+            return UserModel.find(query, {name:1, defaultAvatarBgColor: 1 });
+        })
+        .then((users) => {
+            const updatedMembers = users?.map((user)=> ({
+                name: user.name,
+                avatarBgColor: user.defaultAvatarBgColor,
+                id: user.id
+            }));
+            return res.json({updatedProject: {
+                id: project.id,
+                name: project.name,
+                category: project.category,
+                creator: project.creator,
+                members: updatedMembers,
+            }});
         });
 });
 

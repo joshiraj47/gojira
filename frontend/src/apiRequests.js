@@ -35,7 +35,15 @@ const searchUsers = async ({searchTerm, selectedProject}) => {
 }
 
 const addMemberToProject = async ({userId, projectId}) => {
-    return await axios.post('/add-member-to-project', {userId, projectId});
+    const addMember = axios.post('/add-member-to-project', {userId, projectId});
+    return await toast.promise(
+        addMember,
+        {
+            success: 'Member added successfully',
+            pending: 'Adding member...'
+        },
+        {pauseOnHover: false}
+    );
 }
 
 const getAllAvatars = async () => {
@@ -81,5 +89,6 @@ export {
     updateUserAvatar,
     createProject,
     getAllProjects,
-    searchUsers
+    searchUsers,
+    addMemberToProject
 };

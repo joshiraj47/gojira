@@ -1,5 +1,9 @@
+@font-face { font-family: CircularStdMedium; src: url('./custom-fonts/CircularStd-Medium.otf'); }
+@font-face { font-family: CircularStdBook; src: url('./custom-fonts/CircularStd-Book.otf'); }
+@font-face { font-family: CircularStdBold; src: url('./custom-fonts/CircularStd-Bold.otf'); }
 body {
   -webkit-font-smoothing: antialiased;
+  font-family: CircularStdMedium, sans-serif !important;
 }
 .App {
   text-align: center;
@@ -38,4 +42,12 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+.font-circular-book {
+  font-family: CircularStdBook, sans-serif;
+}
+
+.font-circular-bold {
+  font-family: CircularStdBold, sans-serif;
 }

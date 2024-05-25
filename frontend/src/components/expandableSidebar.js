@@ -10,7 +10,7 @@ export const ExpandableSidebar = () => {
                     <li>
                         <Link>
                             <FontAwesomeIcon icon={faPlus} fontSize="25px"/>
-                            <span className="text-uppercase mx-4 ps-1 create-font">Create Task</span>
+                            <span className="text-uppercase mx-4 ps-1 create-font font-circular-bold">Create Task</span>
                         </Link>
                     </li>
                 </ul>
