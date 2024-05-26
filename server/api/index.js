@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'http://192.168.0.102:3000',
+    origin: 'https://gojira-ui.vercel.app',
     methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
 }));
 app.use('/images', express.static('../avatars'))
