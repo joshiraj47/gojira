@@ -60,7 +60,22 @@ const updateUserAvatar = async ({avatarName}) => {
     });
 }
 
-const createProject = async ({ name, category, description }) => {
+const createProject = async ({ name, category, description, projectId }) => {
+    if (projectId) {
+        const updateProject = axios.put(`/update-project/${projectId}`, {
+            name,
+            category,
+            description,
+        });
+        return await toast.promise(
+            updateProject,
+            {
+                error: 'Failed to update project. Please try again.',
+                success: 'Project updated successfully',
+            },
+            {pauseOnHover: false}
+        )
+    }
     const createProject = axios.post('/create-project', {
         name,
         category,
@@ -80,6 +95,22 @@ const getAllProjects = async () => {
     return await axios.get('/projects');
 }
 
+const getProject = async ({projectId}) => {
+    return await axios.post('/project-by-id', {projectId});
+}
+
+const deleteProject = async ({projectId}) => {
+    const deleteProject =  axios.put(`/delete-project/${projectId}`);
+    return await toast.promise(
+        deleteProject,
+        {
+            error: 'Failed to delete project. Please try again.',
+            success: 'Project deleted successfully',
+        },
+        {pauseOnHover: false}
+    )
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
@@ -89,6 +120,8 @@ export {
     updateUserAvatar,
     createProject,
     getAllProjects,
+    getProject,
     searchUsers,
-    addMemberToProject
+    addMemberToProject,
+    deleteProject
 };

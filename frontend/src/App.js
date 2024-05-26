@@ -17,7 +17,7 @@ import {LandingPage} from "./components/LandingPage";
 import {CreateProject} from "./components/CreateProject";
 import {Dashboard} from "./components/Dashboard";
 
-axios.defaults.baseURL = 'https://gojira-backend.onrender.com';
+axios.defaults.baseURL = 'http://192.168.0.102:4000';
 axios.defaults.withCredentials = true;
 
 const queryClient = new QueryClient();

@@ -1,9 +1,11 @@
 import {OverlayTrigger, Popover, Table, Tooltip} from "react-bootstrap";
 import './Dashboard.css';
 import {useMutation, useQuery} from "@tanstack/react-query";
-import {addMemberToProject, getAllProjects, searchUsers} from "../apiRequests";
+import {addMemberToProject, deleteProject, getAllProjects, searchUsers} from "../apiRequests";
 import {useEffect, useState} from "react";
 import InitialsAvatar from 'react-initials-avatar';
+import {useNavigate} from "react-router-dom";
+import {isEmpty} from "lodash/fp";
 
 export const Dashboard = () => {
     const repeat = (n) => Array.from({ length: n }, (_, i) => i);
@@ -12,9 +14,18 @@ export const Dashboard = () => {
     let {mutate: addMemberMutate} = useMutation({mutationFn: addMemberToProject, enabled: false, onSuccess: (data) => setRowData(prevData =>
             prevData.map(row => (row.id === data?.data?.updatedProject?.id ? { ...row, ...data?.data?.updatedProject } : row))
         )});
+    let {mutate: deleteProjectMutate} = useMutation({mutationFn: deleteProject, enabled: false, onSuccess: (data) =>
+            setRowData(prevData => {
+                const index = prevData.findIndex(row => row.id === data?.data?.projectId);
+                if (index > -1) prevData.splice(index, 1);
+                return prevData;
+            }
+        )});
 
     const [rowData, setRowData] = useState(null);
     const [searchUserData, setSearchUserData] = useState(null);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         refetch();
@@ -50,12 +61,34 @@ export const Dashboard = () => {
 
     function addUserToProject(user, project) {
         addMemberMutate({userId: user._id, projectId: project.id});
+        document.body.click();
+    }
+
+    const goToCreateProject = () => {
+        navigate('/create-project');
+    }
+
+    const goToEditProject = (project) => {
+        navigate('/create-project', { state: {projectId: project.id} });
+    }
+
+    const deleteProjectById = (project) => {
+        deleteProjectMutate({projectId: project.id});
     }
 
     return (
         <>
-            <div className="p-3">
-                <h1 className="heading text-gray-500">Projects</h1>
+            <div className="p-3 d-flex flex-column">
+                <div className='d-flex justify-content-between'>
+                    <div><h1 className="heading text-gray-500">Projects</h1></div>
+                    <div>
+                        <button onClick={goToCreateProject}
+                                className="btn btn-outline-secondary btn-md" type="submit">
+                            <span>Create new</span>
+                        </button>
+                    </div>
+                </div>
+
                 <div>
                     <Table hover>
                         <thead>
@@ -234,14 +267,54 @@ export const Dashboard = () => {
                                             </div>
                                         }
                                     </td>
-                                    <td className="align-content-center !font-medium font-circular-book !text-gray-700">Nope</td>
+                                    <td className="align-content-center !font-medium font-circular-book !text-gray-700">
+                                        <div className='d-flex space-x-4'>
+                                            <button onClick={() => goToEditProject(project)}
+                                                    className="btn btn-outline-info btn-sm" type="submit">
+                                                <span>Edit</span>
+                                            </button>
+
+                                            <OverlayTrigger
+                                                trigger='click'
+                                                placement="top"
+                                                onExit={() => resetSearchResults()}
+                                                rootClose
+                                                overlay={
+                                                    <Popover id="popover-basic">
+                                                        <Popover.Body className='p-3'>
+                                                            <div>
+                                                                <span className='font-semibold'>Are you sure?</span>
+                                                            </div>
+                                                            <div className='mt-2 d-flex space-x-3'>
+                                                                <button className="btn btn-outline-secondary btn-xs"
+                                                                        type="submit"
+                                                                onClick={() => document.body.click()}
+                                                                >
+                                                                    <span>Cancel</span>
+                                                                </button>
+                                                                <button onClick={() => deleteProjectById(project)} className="btn btn-primary btn-xs"
+                                                                        type="submit">
+                                                                    <span>Confirm</span>
+                                                                </button>
+                                                            </div>
+                                                        </Popover.Body>
+                                                    </Popover>
+                                                }
+                                            >
+                                                <button className="btn btn-outline-danger btn-sm" type="submit">
+                                                    <span>Delete</span>
+                                                </button>
+                                            </OverlayTrigger>
+
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         }
                         {
-                            !isFetching && isSuccess && !rowData &&
+                            !isFetching && isSuccess && isEmpty(rowData) &&
                             <tr className="h-12 cursor">
-                                <td colSpan='5' className="text-center">No projects found...</td>
+                            <td colSpan='5' className="text-center">No projects found...</td>
                             </tr>
                         }
                         </tbody>

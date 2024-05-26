@@ -4,6 +4,15 @@
 body {
   -webkit-font-smoothing: antialiased;
   font-family: CircularStdMedium, sans-serif !important;
+
+  .btn {
+    &.btn-xs {
+      padding: .25rem .4rem;
+      font-size: .875rem;
+      line-height: 1;
+      border-radius: .2rem;
+    }
+  }
 }
 .App {
   text-align: center;
@@ -51,3 +60,4 @@ body {
 .font-circular-bold {
   font-family: CircularStdBold, sans-serif;
 }
+

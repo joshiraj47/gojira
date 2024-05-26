@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const UserModel = require("./models/User");
 const ProjectModel = require("./models/Project");
 const ProjectUserModel = require("./models/ProjectUser");
-const {isEmpty} = require("lodash/fp");
+const {isEmpty, isNil} = require("lodash/fp");
 require('dotenv').config();
 const app = express();
 
@@ -20,7 +20,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
     credentials: true,
-    origin: 'https://gojira-ui.vercel.app',
+    origin: 'http://192.168.0.102:3000',
     methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
 }));
 app.use('/images', express.static('../avatars'))
@@ -161,8 +161,25 @@ app.post("/create-project", async (req, res) => {
         });
 });
 
+app.put("/update-project/:projectId", async (req, res) => {
+    const id= req.projectId;
+    const {name, category, description} = req.body;
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => UserModel.findById(userData.id))
+        .then(() => {
+            return ProjectModel.updateOne({id: id}, {$set: {name, category, description}})
+                .then((projectDoc) => {
+                    return res.json('update success');
+                })
+                .catch((err) => {
+                    res.status(409).send(err.errorResponse.errmsg);
+                });
+        });
+});
+
 app.get("/projects", (req, res) => {
     let projects = [];
+    let resultProjects = [];
     checkCookieTokenAndReturnUserData(req)
         .then((userData) => {
             return ProjectModel.find({}, {name:1, category: 1, creator: 1 });
@@ -171,36 +188,97 @@ app.get("/projects", (req, res) => {
             projects = allProjects;
             const projectIds = allProjects?.map((project) => project.id);
             const query = { projectId: { $in: projectIds } };
-            return ProjectUserModel.find(query);
+            //find(query, {projectId: 1, userId: 1, _id: 0});
+            return ProjectUserModel.aggregate([
+                {
+                    $match: {
+                        projectId: { $in: projectIds }
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$projectId",
+                        users: {
+                            $push: "$userId"
+                        }
+                    }
+                },
+                {
+                    $project: {
+                        _id: 0,  // Exclude the default _id field
+                        projectId: "$_id",
+                        users: 1
+                    }
+                }
+            ])
         })
         .then((projectsUsers) => {
-            const result = [];
-            projects = projects.map(project => ({
-                id: project.id,
-                name: project.name,
-                category: project.category,
-                creator: project.creator,
-                users: projectsUsers.map((item) => (item.projectId === project.id) && item.userId)
-            }));
+            const val = projects?.reduce((prev, currentValue) => {
+                return prev.then(() => {
+                    return new Promise(async (resolve) => {
+                        const projectWithMemberDetails = {
+                            id: currentValue.id,
+                            name: currentValue.name,
+                            category: currentValue.category,
+                            creator: currentValue.creator,
+                        };
 
-            projects?.forEach(project => {
-                const projectWithMemberDetails = {
-                    id: project.id,
-                    name: project.name,
-                    category: project.category,
-                    creator: project.creator,
-                };
-                const memberIdsArray = projectsUsers.map((item) => (item.projectId === project.id) && item.userId);
-                const membersPromises = memberIdsArray?.map((memberId) => UserModel.findById(memberId, {name:1, defaultAvatarBgColor: 1}));
-                Promise.all(membersPromises).then((resultArray) => {
-                    projectWithMemberDetails.members = resultArray?.map((user)=> ({
-                        name: user.name,
-                        avatarBgColor: user.defaultAvatarBgColor,
-                        id: user.id
-                    }));
-                    result.push(projectWithMemberDetails);
-                    return res.json({projects: result});
-                })
+                        let memberIdsArray = [];
+                        projectsUsers.forEach((item) => {
+                            if (item.projectId === currentValue.id) {
+                                memberIdsArray.push(...item.users);
+                            }
+                        });
+                        const membersPromises = memberIdsArray?.map((memberId) => UserModel.findById(memberId, {name:1, defaultAvatarBgColor: 1}));
+
+                        await Promise.all(membersPromises)
+                            .then((resultArray) => {
+                                projectWithMemberDetails.members = resultArray?.map((user)=> ({
+                                    name: user.name,
+                                    avatarBgColor: user.defaultAvatarBgColor,
+                                    id: user.id
+                                }));
+                                resultProjects.push(projectWithMemberDetails);
+                                resolve(resultProjects);
+                            });
+                    });
+                });
+            }, Promise.resolve({}));
+
+            val.then(() => {
+                return res.json({projects: resultProjects});
+            })
+        })
+});
+
+app.post("/project-by-id", (req, res) => {
+    let result = {};
+    const {projectId} = req.body;
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return ProjectModel.findById(projectId, {name:1, description: 1, category: 1 });
+        })
+        .then((project) => {
+            result = project;
+            const query = { projectId };
+            return ProjectUserModel.find(query, {userId: 1, _id:0});
+        })
+        .then((userIdsObjectArray) => {
+            const userIdsArray = userIdsObjectArray.map(obj => obj.userId);
+            const membersPromises = userIdsArray?.map((memberId) => UserModel.findById(memberId, {name:1, defaultAvatarBgColor: 1}));
+            const projectWithMemberDetails = {
+                id: result.id,
+                description: result.description,
+                name: result.name,
+                category: result.category,
+            };
+            Promise.all(membersPromises).then((resultArray) => {
+                projectWithMemberDetails.members = resultArray?.map((user)=> ({
+                    name: user.name,
+                    avatarBgColor: user.defaultAvatarBgColor,
+                    id: user.id
+                }));
+                return res.json({project: projectWithMemberDetails});
             });
         });
 });
@@ -244,6 +322,24 @@ app.post("/add-member-to-project", async (req, res) => {
                 creator: project.creator,
                 members: updatedMembers,
             }});
+        });
+});
+
+app.put("/delete-project/:projectId", async (req, res) => {
+    const projectId= req?.params?.projectId;
+    if (isNil(projectId)) throw new Error('project id cannot be null');
+    checkCookieTokenAndReturnUserData(req)
+        .then((userdata) => {
+            return ProjectUserModel.deleteMany({projectId: projectId});
+        })
+        .then(() => {
+            return ProjectModel.deleteOne({_id: projectId});
+        })
+        .then(() => {
+            return res.json({projectId});
+        })
+        .catch((err) => {
+            res.status(409).send(err?.errorResponse?.errmsg);
         });
 });
 

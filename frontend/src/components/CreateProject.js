@@ -1,20 +1,41 @@
 import './CreateProject.css';
 import Quill from "quill";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import Dropdown from "react-bootstrap/Dropdown";
 import {DropdownButton} from "react-bootstrap";
 import {isEmpty} from "lodash/fp";
 import {useMutation} from "@tanstack/react-query";
-import {createProject as createProjectRequest} from "../apiRequests";
-import {useNavigate} from "react-router-dom";
+import {createProject as createProjectRequest, getProject} from "../apiRequests";
+import {useLocation, useNavigate} from "react-router-dom";
 export const CreateProject = () => {
     const ref = useRef(null);
     const isMounted = useRef(false);
     const navigate = useNavigate();
     const [name, setName] = useState('');
-    const projectCategories = ['Software', 'Business', 'Marketing'];
+    const {projectCategories} = useMemo(() => ({
+        projectCategories: ['Software', 'Business', 'Marketing'],
+    }), []);
     const [selectedCategory, setSelectedCategory] = useState(projectCategories[0]);
     const [description, setDescription] = useState('');
+    const { state } = useLocation();
+
+    const {mutate: getProjectMutate} = useMutation({mutationFn: getProject, enabled: false, onSuccess: (data) => setEditProjectDetails(data?.data?.project)});
+
+    function setEditProjectDetails(editData) {
+        setName(editData.name);
+        ref.current.root.innerHTML = editData.description;
+        setCategory(editData.category);
+    }
+
+    useEffect(() => {
+        if (state?.projectId) {
+            getProjectMutate({projectId: state.projectId});
+        } else {
+            setName('');
+            setCategory(projectCategories[0]);
+            if (ref?.current?.root?.innerHTML) ref.current.root.innerHTML = '';
+        }
+    }, [getProjectMutate, projectCategories, state]);
 
     const {mutate, isPending, isSuccess} = useMutation({
         mutationFn: createProjectRequest,
@@ -31,6 +52,11 @@ export const CreateProject = () => {
     function createProject(e) {
         e.preventDefault();
         mutate({name, category: selectedCategory, description});
+    }
+
+    function updateProject(e) {
+        e.preventDefault();
+        mutate({name, category: selectedCategory, description, projectId: state?.projectId});
     }
 
 
@@ -53,7 +79,10 @@ export const CreateProject = () => {
             <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet"/>
             <div className="createProject">
                 <form className="project-form">
-                    <h1 className="heading">Create Project</h1>
+                    {
+                        state?.projectId ? <h1 className="heading">Edit Project</h1> :
+                            <h1 className="heading">Create Project</h1>
+                    }
                     <div className="mt-3" data-testid="form-field:name">
                         <label htmlFor="form-field-5" className="form-label-custom">Name</label>
                         <div className="form-input-div">
@@ -84,9 +113,10 @@ export const CreateProject = () => {
                     </div>
                     <div className="my-sm-4">
                         <button disabled={shouldDisableSubmit()}
-                                onClick={createProject}
+                                onClick={state?.projectId ? updateProject : createProject}
                                 className="btn btn-primary btn-md" type="submit">
-                            {(!isSuccess || !isPending) && <span>{!isPending && <span>Create</span>}{isPending && <span>Creating</span>} Project</span>}
+                            {!state?.projectId && (!isSuccess || !isPending) && <span>{!isPending && <span>Create</span>}{isPending && <span>Creating</span>} Project</span>}
+                            {state?.projectId && (!isSuccess || !isPending) && <span>{!isPending && <span>Save</span>}{isPending && <span>Saving</span>}</span>}
                             {isPending && <span className="spinner-border spinner-border-sm mx-1" role="status"></span>}
                         </button>
                     </div>
