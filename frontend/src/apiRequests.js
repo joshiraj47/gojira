@@ -115,6 +115,10 @@ const deleteProject = async ({projectId}) => {
     )
 }
 
+const getAllIssuesByProjectId = async ({projectId}) => {
+    return await axios.post(`/issues-by-project-id/${projectId}`);
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
@@ -128,5 +132,6 @@ export {
     getProject,
     searchUsers,
     addMemberToProject,
-    deleteProject
+    deleteProject,
+    getAllIssuesByProjectId
 };

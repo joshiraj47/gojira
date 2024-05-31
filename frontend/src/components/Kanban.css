@@ -1,3 +1,18 @@
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading-shimmer {
+    animation: shimmer 2s infinite linear;
+    background: linear-gradient(to right, #eff1f3 4%, #e2e2e2 25%, #eff1f3 36%);
+    background-size: 1000px 100%;
+}
+
 .search-box {
     position: relative;
     & i {
@@ -85,6 +100,27 @@
             height: 100%;
             padding: 0 5px;
         }
+    }
+}
+
+.issue{
+    color: inherit;
+    text-decoration: none;
+}
+.issue-detail {
+    padding: 10px;
+    border-radius: 3px;
+    background: rgb(255, 255, 255);
+    box-shadow: rgba(9, 30, 66, 0.25) 0 1px 2px 0;
+    transition: background 0.1s ease 0s;
+    cursor: pointer;
+    user-select: none;
+
+    p {
+        padding-bottom: 11px;
+        font-size: 15px;
+        line-height: 1.4285;
+        margin: 0;
     }
 }
 

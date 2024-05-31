@@ -6,6 +6,7 @@ import {useEffect, useState} from "react";
 import InitialsAvatar from 'react-initials-avatar';
 import {useNavigate} from "react-router-dom";
 import {isEmpty} from "lodash/fp";
+import {avatarBgColors} from "./constants/avatarBgColors";
 
 export const Dashboard = () => {
     const repeat = (n) => Array.from({ length: n }, (_, i) => i);
@@ -38,15 +39,6 @@ export const Dashboard = () => {
     useEffect(() => {
         setSearchUserData(users);
     }, [users]);
-
-    const bgColors = {
-        '#A9294F': '!bg-[#A9294F]',
-        '#ED6663': '!bg-[#ED6663]',
-        '#389393': '!bg-[#389393]',
-        '#D82148': '!bg-[#D82148]',
-        '#8C5425': '!bg-[#8C5425]',
-        '#6F38C5': '!bg-[#6F38C5]',
-    };
 
     const maxCirclesCount = 3;
 
@@ -139,7 +131,7 @@ export const Dashboard = () => {
                                                                                         >
                                                                                             <div role='button'>
                                                                                                 <InitialsAvatar
-                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
                                                                                                     key={member.name} name={member.name}/>
                                                                                             </div>
                                                                                         </OverlayTrigger>
@@ -157,7 +149,7 @@ export const Dashboard = () => {
                                                                                         >
                                                                                             <div role='button'>
                                                                                                 <InitialsAvatar
-                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                                                    className={`initials-avatar !w-10 !h-10 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
                                                                                                     key={member.name}
                                                                                                     name={member.name}/>
                                                                                             </div>
@@ -186,7 +178,7 @@ export const Dashboard = () => {
                                                                     project.members?.length <= maxCirclesCount &&
                                                                     project.members?.map((member) => (
                                                                         <InitialsAvatar
-                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
                                                                             key={member.name} name={member.name}/>
                                                                     ))
                                                                 }
@@ -194,7 +186,7 @@ export const Dashboard = () => {
                                                                     project.members?.length > maxCirclesCount &&
                                                                     project.members.slice(0, maxCirclesCount)?.map((member) => (
                                                                         <InitialsAvatar
-                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${bgColors[member.avatarBgColor]}`}
+                                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
                                                                             key={member.name} name={member.name}/>
                                                                     ))
                                                                 }
@@ -241,7 +233,7 @@ export const Dashboard = () => {
                                                                                         searchUserData?.map((user) => (
                                                                                             <li className="list-group-item border-0 font-circular-book p-1 cursor" key={user._id} onClick={() => addUserToProject(user, project)}>
                                                                                             <InitialsAvatar
-                                                                                                className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${bgColors[user.defaultAvatarBgColor]}`}
+                                                                                                className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${avatarBgColors[user.defaultAvatarBgColor]}`}
                                                                                                 key={user.name}
                                                                                                 name={user.name}/>
                                                                                             <span

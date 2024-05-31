@@ -9,6 +9,7 @@ const UserModel = require("./models/User");
 const ProjectModel = require("./models/Project");
 const ProjectUserModel = require("./models/ProjectUser");
 const {isEmpty, isNil} = require("lodash/fp");
+const IssueModel = require("./models/Issue");
 require('dotenv').config();
 const app = express();
 
@@ -354,16 +355,28 @@ app.put("/delete-project/:projectId", async (req, res) => {
         });
 });
 
+app.post("/issues-by-project-id/:projectId", async (req, res) => {
+    const projectId= req?.params?.projectId;
+    if (isNil(projectId)) throw new Error('projectId cannot be null!!');
+    checkCookieTokenAndReturnUserData(req)
+        .then((usr) => {
+            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1});
+        })
+        .then((issues) => {
+            res.json({issues});
+        });
+})
+
 function checkCookieTokenAndReturnUserData(request) {
     const {token} = request.cookies;
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         if (token) {
             jwt.verify(token, jwtSecret, {},(err, decryptedUserModel) => {
-                if (err) reject(err);
+                if (err) throw new Error(err);
                 resolve(decryptedUserModel);
             });
         } else {
-            reject('No token found');
+            throw new Error('No token found');
         }
     });
 }
