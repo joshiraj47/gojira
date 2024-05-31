@@ -80,7 +80,7 @@ export const Dashboard = () => {
         <>
             <div className="p-3 d-flex flex-column">
                 <div className='d-flex justify-content-between'>
-                    <div><h1 className="heading text-gray-500">Projects</h1></div>
+                    <div><h1 className="heading text-gray-700">Projects</h1></div>
                     <div>
                         <button onClick={goToCreateProject}
                                 className="btn btn-outline-secondary btn-md" type="submit">

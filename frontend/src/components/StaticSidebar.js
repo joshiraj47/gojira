@@ -20,7 +20,7 @@ export const StaticSidebar = () => {
 
                 <div className="w-full px-3">
                     <div className="flex flex-col items-center w-full mt-3 border-t border-gray-300 font-circular-book text-gray-700">
-                        <Link className="flex items-center w-full h-12 px-5 mt-2 rounded hover:bg-gray-200 hover:fill-blue-600 hover:text-blue-600" to="/">
+                        <NavLink className="flex items-center w-full h-12 px-5 mt-2 rounded hover:bg-gray-200 hover:fill-blue-600 hover:text-blue-600" to="/kanban">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="25" fill="currentColor"
                                  className="bi bi-kanban" viewBox="0 0 16 20">
                                 <path
@@ -29,7 +29,7 @@ export const StaticSidebar = () => {
                                     d="M6.5 3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm-4 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1z"/>
                             </svg>
                             <span className="ml-2 text-md-center font-medium">Kanban Board</span>
-                        </Link>
+                        </NavLink>
                         <NavLink className="flex items-center w-full h-12 px-5 mt-2 rounded hover:bg-gray-200 hover:fill-blue-600 hover:text-blue-600" to="/">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="25" fill="currentColor"
                                  className="bi bi-gear" viewBox="0 0 16 20">

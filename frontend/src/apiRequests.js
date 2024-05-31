@@ -95,6 +95,10 @@ const getAllProjects = async () => {
     return await axios.get('/projects');
 }
 
+const getAllProjectsWithJustNameAndId = async () => {
+    return await axios.get('/projects-with-name-and-id');
+}
+
 const getProject = async ({projectId}) => {
     return await axios.post('/project-by-id', {projectId});
 }
@@ -120,6 +124,7 @@ export {
     updateUserAvatar,
     createProject,
     getAllProjects,
+    getAllProjectsWithJustNameAndId,
     getProject,
     searchUsers,
     addMemberToProject,

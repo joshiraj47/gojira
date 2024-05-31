@@ -16,6 +16,7 @@ import {ToastContainer} from "react-toastify";
 import {LandingPage} from "./components/LandingPage";
 import {CreateProject} from "./components/CreateProject";
 import {Dashboard} from "./components/Dashboard";
+import {Kanban} from "./components/Kanban";
 
 axios.defaults.baseURL = 'https://gojira-backend.onrender.com';
 axios.defaults.withCredentials = true;
@@ -33,6 +34,7 @@ function App() {
                           <Route path="" element={<ProtectedLayout/>}>
                               <Route path="" element={<LandingPage/>}>
                                   <Route path="" element={<Dashboard/>}/>
+                                  <Route path="kanban" element={<Kanban/>}/>
                                   <Route path="create-project" element={<CreateProject/>}/>
                               </Route>
                               <Route path="profile" element={<Profile/>} />

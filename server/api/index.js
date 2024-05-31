@@ -251,9 +251,20 @@ app.get("/projects", (req, res) => {
         })
 });
 
+app.get("/projects-with-name-and-id", (req, res) => {
+    checkCookieTokenAndReturnUserData(req)
+        .then((userData) => {
+            return ProjectModel.find({}, {name:1 });
+        })
+        .then((projects) => {
+           res.json({projects});
+        });
+});
+
 app.post("/project-by-id", (req, res) => {
     let result = {};
     const {projectId} = req.body;
+    if (isNil(projectId)) throw new Error('project id cannot be null');
     checkCookieTokenAndReturnUserData(req)
         .then((userData) => {
             return ProjectModel.findById(projectId, {name:1, description: 1, category: 1 });

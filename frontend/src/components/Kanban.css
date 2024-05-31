@@ -1,0 +1,91 @@
+.search-box {
+    position: relative;
+    & i {
+        position: absolute;
+        top: 8px;
+        left: 6px;
+        color: #b8b9bc;
+    }
+
+    .form-control {
+        text-indent: 15px;
+    }
+}
+
+.members-div {
+    margin: 0 12px 0 2px;
+
+    .initials-avatar:hover {
+        border: 1px solid rgb(235, 236, 240);
+    }
+}
+
+.dropdown-menu {
+    max-height: 50vh !important;
+    overflow-y: auto;
+
+    .dropdown-item:hover {
+        background: rgb(210, 229, 254);
+    }
+}
+
+.filter-button {
+    display: inline-flex;
+    -webkit-box-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    justify-content: center;
+    height: 32px;
+    vertical-align: middle;
+    line-height: 1;
+    padding: 0 12px;
+    white-space: nowrap;
+    border-radius: 3px;
+    transition: all 0.1s ease 0s;
+    appearance: none;
+    cursor: pointer;
+    user-select: none;
+    font-size: 14.5px;
+    background: rgb(255, 255, 255);
+    color: rgb(66, 82, 110);
+    font-family: CircularStdBook, sans-serif;
+    font-weight: normal;
+
+    &:hover {
+        background: rgb(235, 236, 240);
+    }
+}
+
+.kanban-div {
+    margin: 26px -5px 0;
+    .categories {
+        margin: 0 5px;
+        min-height: 450px;
+        width: 25%;
+        border-radius: 3px;
+        background: rgb(244, 245, 247);
+
+        .title {
+            padding: 13px 10px 17px;
+            text-transform: uppercase;
+            color: rgb(94, 108, 132);
+            font-size: 13.5px;
+            font-weight: bolder;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+
+            .count {
+                text-transform: lowercase;
+                font-size: 13px;
+            }
+        }
+
+        .tasks-div {
+            height: 100%;
+            padding: 0 5px;
+        }
+    }
+}
+
+
