@@ -121,6 +121,8 @@
         font-size: 15px;
         line-height: 1.4285;
         margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 

@@ -46,12 +46,16 @@ export const Kanban = () => {
                 <div className="d-flex justify-content-between align-items-center">
                     <div>
                         <FontAwesomeIcon icon={issueTypeIcons[issue.type]} className='d-inline-block'
-                                         size='md' color={issueTypeColor[issue.type]}/>
-                        <FontAwesomeIcon icon={issuePriorityIcons[issue.priority]} className='d-inline-block  pl-2'
-                                         size='md' color={issuePriorityColor[issue.priority]}/>
+                                         fontSize='20px' color={issueTypeColor[issue.type]}/>
+                        <FontAwesomeIcon icon={issuePriorityIcons[issue.priority]} className='d-inline-block pl-1.5'
+                                         fontSize='20px' color={issuePriorityColor[issue.priority]}/>
+                        <span className="badge badge-pill badge-primary !ml-1.5 !bg-gray-200 !text-gray-800 align-top">{issue.estimate}</span>
                     </div>
                     <div className="d-flex ml-0.5">
-
+                        <InitialsAvatar
+                            className={`initials-avatar !w-7 !h-7 !rounded-full font-semibold font-circular-book ${avatarBgColors[issue?.assignee?.defaultAvatarBgColor]}`}
+                            key={issue?.assignee?.name}
+                            name={issue?.assignee?.name}/>
                     </div>
                 </div>
             </div>

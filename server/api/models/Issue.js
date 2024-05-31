@@ -13,6 +13,7 @@ const IssueSchema = new Schema({
     title: String,
     type: String,
     updatedAt: String,
+    assigneeId: String,
 });
 
 const IssueModel = mongoose.model('Issue', IssueSchema);
