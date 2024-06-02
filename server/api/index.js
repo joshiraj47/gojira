@@ -16,14 +16,24 @@ const app = express();
 const bcryptSalt = bcrypt.genSaltSync(10);
 const jwtSecret = 'test1213Secret65754Key';
 const PORT = process.env.PORT || 4000;
+const ENVIRONMENT = process.env.NODE_ENV;
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({
-    credentials: true,
-    origin: 'https://gojira-ui.vercel.app',
-    methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
-}));
+if (ENVIRONMENT === 'PRODUCTION') {
+    app.use(cors({
+        credentials: true,
+        origin: 'https://gojira-ui.vercel.app',
+        methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
+    }));
+} else {
+    app.use(cors({
+        credentials: true,
+        origin: 'http://192.168.0.102:3000',
+        methods: ["POST", "GET", "PUT","DELETE","OPTIONS"]
+    }));
+}
+
 app.use('/images', express.static('../avatars'))
 
 mongoose.connect(process.env.MONGO_URL);
@@ -42,9 +52,15 @@ app.post("/login", async (req, res) => {
                 UserModel.updateOne({email: userDoc.email}, {$set: {lastLogin: new Date().getTime()}}).then((updatedDoc) => {
                     jwt.sign({email: userDoc.email, id: userDoc._id}, jwtSecret, {}, (err, token) => {
                         if (err) throw err;
-                        return res
-                            .cookie("token", token, { withCredentials: true, sameSite: "none", secure: true, httpOnly: true })
-                            .json("success");
+                        if (ENVIRONMENT === 'PRODUCTION') {
+                            return res
+                                .cookie("token", token, { withCredentials: true, sameSite: "none", secure: true, httpOnly: true })
+                                .json("success");
+                        } else {
+                            return res
+                                .cookie("token", token, { withCredentials: true, sameSite: "lax", secure: false, httpOnly: true })
+                                .json("success");
+                        }
                     });
                 });
 
