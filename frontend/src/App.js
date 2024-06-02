@@ -18,7 +18,7 @@ import {CreateProject} from "./components/CreateProject";
 import {Dashboard} from "./components/Dashboard";
 import {Kanban} from "./components/Kanban";
 
-axios.defaults.baseURL = process.env.NODE_ENV === 'PRODUCTION' ? 'https://gojira-backend.onrender.com' : 'http://192.168.0.102:4000';
+axios.defaults.baseURL = process.env.REACT_APP_NODE_ENV === 'PRODUCTION' ? 'https://gojira-backend.onrender.com' : 'http://192.168.0.102:4000';
 axios.defaults.withCredentials = true;
 axios.defaults.credentials = 'include';
 
