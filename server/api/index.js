@@ -373,15 +373,41 @@ app.put("/delete-project/:projectId", async (req, res) => {
 
 app.post("/issues-by-project-id/:projectId", async (req, res) => {
     const projectId= req?.params?.projectId;
+    let resultIssues = [];
     if (isNil(projectId)) throw new Error('projectId cannot be null!!');
     checkCookieTokenAndReturnUserData(req)
         .then((usr) => {
-            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1});
+            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1, assigneeId: 1, estimate: 1});
         })
         .then((issues) => {
-            res.json({issues});
+            const val = issues?.reduce((prev, currentValue) => {
+                return prev.then(() => {
+                    return new Promise(async (resolve) => {
+                        const issueWithMemberDetails = {
+                            createdAt: currentValue.createdAt,
+                            priority: currentValue.priority,
+                            status: currentValue.status,
+                            title: currentValue.title,
+                            type: currentValue.type,
+                            estimate: currentValue.estimate,
+                            updatedAt: currentValue.updatedAt
+                        };
+
+                        await UserModel.findById(currentValue.assigneeId, {name:1, defaultAvatarBgColor: 1})
+                            .then((assignee) => {
+                                issueWithMemberDetails.assignee = assignee;
+                                resultIssues.push(issueWithMemberDetails);
+                                resolve(resultIssues);
+                            });
+                    });
+                });
+            }, Promise.resolve({}));
+
+            val.then(() => {
+                return res.json({issues: resultIssues});
+            });
         });
-})
+});
 
 function checkCookieTokenAndReturnUserData(request) {
     const {token} = request.cookies;
