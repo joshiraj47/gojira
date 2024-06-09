@@ -7,7 +7,7 @@ const IssueSchema = new Schema({
     estimate: Number,
     description: String,
     createdAt: String,
-    priority: Number,
+    priority: String,
     status: String,
     timeSpent: Number,
     title: String,
