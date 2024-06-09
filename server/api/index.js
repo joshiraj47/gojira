@@ -377,7 +377,7 @@ app.post("/issues-by-project-id/:projectId", async (req, res) => {
     if (isNil(projectId)) throw new Error('projectId cannot be null!!');
     checkCookieTokenAndReturnUserData(req)
         .then((usr) => {
-            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1, assigneeId: 1, estimate: 1});
+            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1, assigneeId: 1, estimate: 1, timeSpent: 1, description: 1, reporterId: 1});
         })
         .then((issues) => {
             const val = issues?.reduce((prev, currentValue) => {
@@ -390,12 +390,20 @@ app.post("/issues-by-project-id/:projectId", async (req, res) => {
                             title: currentValue.title,
                             type: currentValue.type,
                             estimate: currentValue.estimate,
-                            updatedAt: currentValue.updatedAt
+                            timeSpent: currentValue.timeSpent,
+                            updatedAt: currentValue.updatedAt,
+                            description: currentValue.description
                         };
 
                         await UserModel.findById(currentValue.assigneeId, {name:1, defaultAvatarBgColor: 1})
                             .then((assignee) => {
                                 issueWithMemberDetails.assignee = assignee;
+                            })
+                            .then(() => {
+                                return UserModel.findById(currentValue.reporterId, {name:1, defaultAvatarBgColor: 1});
+                            })
+                            .then((reporter) => {
+                                issueWithMemberDetails.reporter = reporter;
                                 resultIssues.push(issueWithMemberDetails);
                                 resolve(resultIssues);
                             });
