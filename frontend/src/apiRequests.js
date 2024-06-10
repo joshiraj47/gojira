@@ -103,6 +103,10 @@ const getProject = async ({projectId}) => {
     return await axios.post('/project-by-id', {projectId});
 }
 
+const updateIssue = async ({issueId, payload}) => {
+    return await axios.put(`/update-issue/${issueId}`, {payload});
+}
+
 const deleteProject = async ({projectId}) => {
     const deleteProject =  axios.put(`/delete-project/${projectId}`);
     return await toast.promise(
@@ -127,6 +131,7 @@ export {
     getUserAvatar,
     updateUserAvatar,
     createProject,
+    updateIssue,
     getAllProjects,
     getAllProjectsWithJustNameAndId,
     getProject,

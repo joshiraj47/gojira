@@ -5,7 +5,7 @@ import {DropdownButton} from "react-bootstrap";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {isEmpty, isNil} from "lodash/fp";
-import {getAllIssuesByProjectId, getAllProjectsWithJustNameAndId, getProject} from "../apiRequests";
+import {getAllIssuesByProjectId, getAllProjectsWithJustNameAndId, getProject, updateIssue} from "../apiRequests";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {avatarBgColors} from "./constants/avatarBgColors";
 import {
@@ -25,9 +25,15 @@ export const Kanban = () => {
     const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["projects"], queryFn: getAllProjectsWithJustNameAndId});
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
     const {data: {data: {issues} = {}} = {}, isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false});
+    const {mutate: updateIssueMutate} = useMutation({mutationFn: updateIssue, enabled: false, onSuccess: (data) => {
+            const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?._id ? { ...issue, ...data?.data?.updatedIssue } : issue))
+            groupIssuesByStatus(updatedIssues);
+        }});
+
     const [selectedProject, setSelectedProject] = useState(null);
     const [issuesByGroup, setIssuesByGroup] = useState(null);
     const [showIssueDetailsModal, setShowIssueDetailsModal] = useState(false);
+    const [selectedIssueDetails, setSelectedIssueDetails] = useState(null);
     const [selectedIssueType, setSelectedIssueType] = useState(null);
     const [selectedIssuePriority, setSelectedIssuePriority] = useState('');
     const [selectedIssueStatus, setSelectedIssueStatus] = useState(null);
@@ -75,6 +81,7 @@ export const Kanban = () => {
     }, [showIssueDetailsModal]);
 
     const handleShowIssueModal = (issue) => {
+        setSelectedIssueDetails(issue);
         setSelectedIssueType(issue.type);
         setSelectedIssueStatus(issue.status);
         setSelectedIssuePriority(issue.priority);
@@ -87,13 +94,29 @@ export const Kanban = () => {
 
     const handleCloseIssueModal = () => setShowIssueDetailsModal(false);
 
+    const handleSetIssueType = (val) => {
+        setSelectedIssueType(val);
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {type: val}});
+        }
+    }
+
+    const handleSetIssueStatus = (val) => {
+        setSelectedIssueStatus(val);
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {status: val}});
+        }
+    }
+
     const handleSetIssueEstimate = (event) => {
         setSelectedIssueEstimate(event?.target?.value);
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {estimate: event?.target?.value}});
+        }
     }
 
     function getIssueElement(issue) {
         return <div key={issue.title}>
-            <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet"/>
             <div className='issue d-block mb-1.5' role='button' onClick={() => handleShowIssueModal(issue)} >
                 <div className='issue-detail'>
                     <p>{issue.title}</p>
@@ -115,152 +138,158 @@ export const Kanban = () => {
                     </div>
                 </div>
             </div>
-
-            <Modal size='lg' fullscreen='xl-down' show={showIssueDetailsModal} onHide={handleCloseIssueModal}>
-                <Modal.Header className='issue-detail-modal header !border-b-0'>
-                    <div className="issue-type" tabIndex="0">
-                        <div data-testid="select:type" className="type">
-                            <DropdownButton
-                                title={<>
-                                    <FontAwesomeIcon icon={issueTypeIcons[selectedIssueType]} className='d-inline-block'
-                                                     fontSize='16px' color={issueTypeColor[selectedIssueType]}/>
-                                    <span className="pl-2 text-sm">{selectedIssueType}</span></>}
-                                variant={'tertiary'}
-                                className='status-btn !uppercase !text-xs !text-[#5E6C84] !tracking-wider task-btn'
-                                onSelect={setSelectedIssueType}
-                            >
-                                {
-                                    issueTypes.filter(type => type !== selectedIssueType)?.map(type => (
-                                        <Dropdown.Item
-                                            key={type}
-                                            eventKey={type}
-                                            className='uppercase p-2'>
-                                            <div className='status-label'>{
-                                                <>
-                                                    <FontAwesomeIcon icon={issueTypeIcons[type]} className='d-inline-block'
-                                                                     fontSize='16px' color={issueTypeColor[type]}/>
-                                                    <span className="pl-2 text-sm">{type}</span></>
-                                            }</div>
-                                        </Dropdown.Item>
-                                    ))
-                                }
-                            </DropdownButton>
-                        </div>
-                    </div>
-                    <div className="d-flex align-items-center">
-                        <button className="filter-button">
-                            <FontAwesomeIcon icon={faTrashCan} size='1x'/>
-                        </button>
-                        <button className="filter-button" onClick={handleCloseIssueModal}>
-                            <FontAwesomeIcon icon={faXmark} size='xl'/>
-                        </button>
-                    </div>
-                </Modal.Header>
-                <Modal.Body className='issue-detail-modal body'>
-                    <div className='pr-12 pt-3 w-8/12'>
-                        <div className='title-text h-12 text-area'>
-                            {issue.title}
-                        </div>
-                        <div className='desc-label'>Description
-                            <div ref={ref} id="editor"></div>
-                        </div>
-
-                    </div>
-                    <div className='pt-1.5 w-4/12'>
-                        <div className='issue-label'>Status</div>
-                        <DropdownButton
-                            className='status-btn'
-                            title={IssueStatusEnum[selectedIssueStatus] ? IssueStatusEnum[selectedIssueStatus] : 'status'}
-                            id="dropdown-menu"
-                            onSelect={setSelectedIssueStatus}
-                        >
-                            {
-                                issueStatus?.filter(status => status !== selectedIssueStatus)?.map((status) => (
-                                    <Dropdown.Item
-                                        key={status}
-                                        eventKey={status}
-                                        className='uppercase p-2'>
-                                        <div className={`status-label ${status}`}>{IssueStatusEnum[status]}</div>
-                                    </Dropdown.Item>
-                                ))
-                            }
-                        </DropdownButton>
-
-                        <div className='issue-label'>Assignee</div>
-                        <DropdownButton
-                            className='status-btn'
-                            title={issue.assignee?.name}
-                            id="dropdown-menu"
-                            onSelect={setSelectedIssueStatus}
-                        >
-                            {
-                                issueStatus?.filter(status => status !== selectedIssueStatus)?.map((status) => (
-                                    <Dropdown.Item
-                                        key={status}
-                                        eventKey={status}
-                                        className='uppercase p-2'>
-                                        <div className={`status-label ${status}`}>{IssueStatusEnum[status]}</div>
-                                    </Dropdown.Item>
-                                ))
-                            }
-                        </DropdownButton>
-
-                        <div className='issue-label'>Reporter</div>
-                        <DropdownButton
-                            className='status-btn'
-                            title={issue.reporter?.name}
-                            id="dropdown-menu"
-                            disabled={true}
-                        >
-                        </DropdownButton>
-
-                        <div className='issue-label'>Priority</div>
-                        <DropdownButton
-                            className='status-btn'
-                            title={<><FontAwesomeIcon icon={issuePriorityIcons[selectedIssuePriority]}
-                                                      className='d-inline-block'
-                                                      fontSize='15px' color={issuePriorityColor[selectedIssuePriority]}/>
-                                <span className='pl-1'>{issuePriorityTypes[selectedIssuePriority]}</span></>}
-                            id="dropdown-menu"
-                            onSelect={setSelectedIssuePriority}
-                        >
-                            {
-                                issuePriorities?.filter(priority => priority !== selectedIssuePriority)?.map((priority) => (
-                                    <Dropdown.Item
-                                        key={priority}
-                                        eventKey={priority}
-                                        className='uppercase p-2'>
-                                        <div className='status-label'>
-                                            <FontAwesomeIcon icon={issuePriorityIcons[priority]}
-                                                             className='d-inline-block'
-                                                             fontSize='15px' color={issuePriorityColor[priority]}/>
-                                            <span className='pl-1'>{issuePriorityTypes[priority]}</span>
-                                        </div>
-                                    </Dropdown.Item>
-                                ))
-                            }
-                        </DropdownButton>
-
-                        <div className='issue-label'>Original Estimate (Hours)</div>
-                        <input type="text" value={selectedIssueEstimate}
-                               className="form-control h-8 !bg-gray-200" onChange={handleSetIssueEstimate}/>
-
-                        <div className='issue-label'>Time Spent (Hours)</div>
-                        <input type="text" value={issue.timeSpent}
-                               className="form-control cursor-not-allowed h-8 !bg-gray-200 focus:border-0 focus:!shadow-none" readOnly/>
-
-                        <div className='created-div d-flex flex-column'>
-                            <span>Created {moment(Number(issue.createdAt || 0)).fromNow()}</span>
-                            <span>Updated {moment(Number(issue.updatedAt || 0)).fromNow()}</span>
-                        </div>
-                    </div>
-                </Modal.Body>
-            </Modal>
         </div>
+    }
+
+    function getModalElement() {
+        return <Modal size='lg' fullscreen='xl-down' show={showIssueDetailsModal} onHide={handleCloseIssueModal}>
+            <Modal.Header className='issue-detail-modal header !border-b-0'>
+                <div className="issue-type" tabIndex="0">
+                    <div data-testid="select:type" className="type">
+                        <DropdownButton
+                            title={<>
+                                <FontAwesomeIcon icon={issueTypeIcons[selectedIssueType]} className='d-inline-block'
+                                                 fontSize='16px' color={issueTypeColor[selectedIssueType]}/>
+                                <span className="pl-2 text-sm">{selectedIssueType}</span></>}
+                            variant={'tertiary'}
+                            className='status-btn !uppercase !text-xs !text-[#5E6C84] !tracking-wider task-btn'
+                            onSelect={handleSetIssueType}
+                        >
+                            {
+                                issueTypes.filter(type => type !== selectedIssueType)?.map(type => (
+                                    <Dropdown.Item
+                                        key={type}
+                                        eventKey={type}
+                                        className='uppercase p-2'>
+                                        <div className='status-label'>{
+                                            <>
+                                                <FontAwesomeIcon icon={issueTypeIcons[type]} className='d-inline-block'
+                                                                 fontSize='16px' color={issueTypeColor[type]}/>
+                                                <span className="pl-2 text-sm">{type}</span></>
+                                        }</div>
+                                    </Dropdown.Item>
+                                ))
+                            }
+                        </DropdownButton>
+                    </div>
+                </div>
+                <div className="d-flex align-items-center">
+                    <button className="filter-button">
+                        <FontAwesomeIcon icon={faTrashCan} size='1x'/>
+                    </button>
+                    <button className="filter-button" onClick={handleCloseIssueModal}>
+                        <FontAwesomeIcon icon={faXmark} size='xl'/>
+                    </button>
+                </div>
+            </Modal.Header>
+            <Modal.Body className='issue-detail-modal body'>
+                <div className='pr-12 pt-3 w-8/12'>
+                    <div className='title-text h-12 text-area'>
+                        {selectedIssueDetails?.title}
+                    </div>
+                    <div className='desc-label'>Description
+                        <div ref={ref} id="editor"></div>
+                    </div>
+
+                </div>
+                <div className='pt-1.5 w-4/12'>
+                    <div className='issue-label'>Status</div>
+                    <DropdownButton
+                        className='status-btn'
+                        title={IssueStatusEnum[selectedIssueStatus] ? IssueStatusEnum[selectedIssueStatus] : 'status'}
+                        id="dropdown-menu"
+                        onSelect={handleSetIssueStatus}
+                    >
+                        {
+                            issueStatus?.filter(status => status !== selectedIssueStatus)?.map((status) => (
+                                <Dropdown.Item
+                                    key={status}
+                                    eventKey={status}
+                                    className='uppercase p-2'>
+                                    <div className={`status-label ${status}`}>{IssueStatusEnum[status]}</div>
+                                </Dropdown.Item>
+                            ))
+                        }
+                    </DropdownButton>
+
+                    <div className='issue-label'>Assignee</div>
+                    <DropdownButton
+                        className='status-btn'
+                        title={selectedIssueDetails?.assignee?.name || 'assignee'}
+                        id="dropdown-menu"
+                        onSelect={setSelectedIssueStatus}
+                    >
+                        {
+                            issueStatus?.filter(status => status !== selectedIssueStatus)?.map((status) => (
+                                <Dropdown.Item
+                                    key={status}
+                                    eventKey={status}
+                                    className='uppercase p-2'>
+                                    <div className={`status-label ${status}`}>{IssueStatusEnum[status]}</div>
+                                </Dropdown.Item>
+                            ))
+                        }
+                    </DropdownButton>
+
+                    <div className='issue-label'>Reporter</div>
+                    <DropdownButton
+                        className='status-btn'
+                        title={selectedIssueDetails?.reporter?.name || 'reporter'}
+                        id="dropdown-menu"
+                        disabled={true}
+                    >
+                    </DropdownButton>
+
+                    <div className='issue-label'>Priority</div>
+                    <DropdownButton
+                        className='status-btn'
+                        title={<><FontAwesomeIcon icon={issuePriorityIcons[selectedIssuePriority]}
+                                                  className='d-inline-block'
+                                                  fontSize='15px' color={issuePriorityColor[selectedIssuePriority]}/>
+                            <span className='pl-1'>{issuePriorityTypes[selectedIssuePriority]}</span></>}
+                        id="dropdown-menu"
+                        onSelect={setSelectedIssuePriority}
+                    >
+                        {
+                            issuePriorities?.filter(priority => priority !== selectedIssuePriority)?.map((priority) => (
+                                <Dropdown.Item
+                                    key={priority}
+                                    eventKey={priority}
+                                    className='uppercase p-2'>
+                                    <div className='status-label'>
+                                        <FontAwesomeIcon icon={issuePriorityIcons[priority]}
+                                                         className='d-inline-block'
+                                                         fontSize='15px' color={issuePriorityColor[priority]}/>
+                                        <span className='pl-1'>{issuePriorityTypes[priority]}</span>
+                                    </div>
+                                </Dropdown.Item>
+                            ))
+                        }
+                    </DropdownButton>
+
+                    <div className='issue-label'>Original Estimate (Hours)</div>
+                    <input type="text" value={selectedIssueEstimate}
+                           className="form-control h-8 !bg-gray-200" onChange={handleSetIssueEstimate}/>
+
+                    <div className='issue-label'>Time Spent (Hours)</div>
+                    <input type="text" value={selectedIssueDetails?.timeSpent}
+                           className="form-control cursor-not-allowed h-8 !bg-gray-200 focus:border-0 focus:!shadow-none" readOnly/>
+
+                    <div className='created-div d-flex flex-column'>
+                        <span>Created {moment(Number(selectedIssueDetails?.createdAt || 0)).fromNow()}</span>
+                        <span>Updated {moment(Number(selectedIssueDetails?.updatedAt || 0)).fromNow()}</span>
+                    </div>
+                </div>
+            </Modal.Body>
+        </Modal>
     }
 
     return (
         <div className='p-3 d-flex flex-column'>
+            <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet"/>
+            {
+                getModalElement()
+            }
             <div className='d-flex justify-content-between'>
                 <div><h1
                     className="text-gray-700 text-2xl">{selectedProject?.name ? selectedProject.name : 'Kanban Board'}</h1>
@@ -295,7 +324,7 @@ export const Kanban = () => {
                 <div className="search-box mr-4 w-40">
                     <i className="fa fa-search"></i>
                     <input type="text"
-                           className="form-control font-circular-book h-8 !bg-gray-100" />
+                           className="form-control font-circular-book h-8 !bg-gray-100"/>
                 </div>
                 <div className='members-div d-flex'>
                     <span className="flex -space-x-2 overflow-hidden">
@@ -321,7 +350,7 @@ export const Kanban = () => {
                 <div className="categories d-flex flex-column">
                     <div className="title">
                         Backlog
-                        <span className="count pl-1">2</span>
+                        <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.backlog?.length || 0}</span>
                     </div>
                     <div className="tasks-div">
                         {
@@ -339,36 +368,54 @@ export const Kanban = () => {
                 <div className="categories d-flex flex-column">
                     <div className="title">
                         Selected For Development
-                        <span className="count pl-1">2</span>
+                        <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.selected?.length || 0}</span>
                     </div>
                     <div className="tasks-div">
                         {
                             isFetchingIssues &&
                             <span className="loading-shimmer h-100 d-block"></span>
+                        }
+                        {
+                            issuesFetched && issuesByGroup &&
+                            issuesByGroup['selected']?.map(issue => (
+                                getIssueElement(issue)
+                            ))
                         }
                     </div>
                 </div>
                 <div className="categories d-flex flex-column">
                     <div className="title">
                         In Progress
-                        <span className="count pl-1">2</span>
+                        <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.inprogress?.length || 0}</span>
                     </div>
                     <div className="tasks-div">
                         {
                             isFetchingIssues &&
                             <span className="loading-shimmer h-100 d-block"></span>
                         }
+                        {
+                            issuesFetched && issuesByGroup &&
+                            issuesByGroup['inprogress']?.map(issue => (
+                                getIssueElement(issue)
+                            ))
+                        }
                     </div>
                 </div>
                 <div className="categories d-flex flex-column">
                     <div className="title">
                         Done
-                        <span className="count pl-1">2</span>
+                        <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.done?.length || 0}</span>
                     </div>
                     <div className="tasks-div">
                         {
                             isFetchingIssues &&
                             <span className="loading-shimmer h-100 d-block"></span>
+                        }
+                        {
+                            issuesFetched && issuesByGroup &&
+                            issuesByGroup['done']?.map(issue => (
+                                getIssueElement(issue)
+                            ))
                         }
                     </div>
                 </div>

@@ -371,6 +371,38 @@ app.put("/delete-project/:projectId", async (req, res) => {
         });
 });
 
+app.put('/update-issue/:issueId', async (req, res) => {
+    const issueId= req.params?.issueId;
+    const {payload} = req.body;
+    const {estimate = null, description = null, priority = null, status = null, type = null, assigneeId = null} = payload;
+    if (isNil(issueId)) throw new Error('issue id cannot be null');
+    checkCookieTokenAndReturnUserData(req)
+        .then(() => {
+            switch (true) {
+                case !isNil(estimate):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {estimate}}, { returnOriginal: false });
+                case !isNil(description):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {description}}, { returnOriginal: false });
+                case !isNil(priority):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {priority}}, { returnOriginal: false });
+                case !isNil(status):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {status}}, { returnOriginal: false });
+                case !isNil(type):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {type}}, { returnOriginal: false });
+                case !isNil(assigneeId):
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {assigneeId}}, { returnOriginal: false });
+                default:
+                    break;
+            }
+        })
+        .then((issueDoc) => {
+            return res.json({updatedIssue: issueDoc});
+        })
+        .catch((err) => {
+            res.status(409).send(err.errorResponse.errmsg);
+        });
+});
+
 app.post("/issues-by-project-id/:projectId", async (req, res) => {
     const projectId= req?.params?.projectId;
     let resultIssues = [];
@@ -392,7 +424,8 @@ app.post("/issues-by-project-id/:projectId", async (req, res) => {
                             estimate: currentValue.estimate,
                             timeSpent: currentValue.timeSpent,
                             updatedAt: currentValue.updatedAt,
-                            description: currentValue.description
+                            description: currentValue.description,
+                            id: currentValue.id
                         };
 
                         await UserModel.findById(currentValue.assigneeId, {name:1, defaultAvatarBgColor: 1})
