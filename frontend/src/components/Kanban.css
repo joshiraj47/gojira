@@ -268,4 +268,8 @@
     }
 }
 
+.grabbing * {
+    cursor: grabbing !important;
+}
+
 

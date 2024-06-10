@@ -380,17 +380,17 @@ app.put('/update-issue/:issueId', async (req, res) => {
         .then(() => {
             switch (true) {
                 case !isNil(estimate):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {estimate}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {estimate, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(description):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {description}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {description, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(priority):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {priority}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {priority, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(status):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {status}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {status, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(type):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {type}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {type, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(assigneeId):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {assigneeId}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {assigneeId, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 default:
                     break;
             }

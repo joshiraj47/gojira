@@ -26,7 +26,8 @@ export const Kanban = () => {
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
     const {data: {data: {issues} = {}} = {}, isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false});
     const {mutate: updateIssueMutate} = useMutation({mutationFn: updateIssue, enabled: false, onSuccess: (data) => {
-            const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?._id ? { ...issue, ...data?.data?.updatedIssue } : issue))
+            const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?._id ? { ...issue, ...data?.data?.updatedIssue } : issue));
+            if (data?.data?.updatedIssue) setSelectedIssueDetails(data?.data?.updatedIssue);
             groupIssuesByStatus(updatedIssues);
         }});
 
@@ -94,6 +95,25 @@ export const Kanban = () => {
 
     const handleCloseIssueModal = () => setShowIssueDetailsModal(false);
 
+    const handleOnDrag = (e, issue) => {
+        e.dataTransfer.setData('draggedIssue', JSON.stringify(issue));
+        e.dataTransfer.effectAllowed = "move";
+        setTimeout(() => {
+            e.target.classList.add("grabbing");
+        }, 50);
+    }
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    }
+
+    const handleOnDrop = (e, dropIssueStatus) => {
+        e.target.classList.remove('grabbing');
+        const stringData = e.dataTransfer.getData("draggedIssue");
+        const draggedIssue = JSON.parse(stringData);
+        if (draggedIssue.status && draggedIssue.status !== dropIssueStatus) updateIssueMutate({issueId: draggedIssue.id, payload: {status: dropIssueStatus}});
+    }
+
     const handleSetIssueType = (val) => {
         setSelectedIssueType(val);
         if (selectedIssueDetails) {
@@ -116,7 +136,7 @@ export const Kanban = () => {
     }
 
     function getIssueElement(issue) {
-        return <div key={issue.title}>
+        return <div key={issue.title} draggable={true} onDragStart={(e) => handleOnDrag(e, issue)}>
             <div className='issue d-block mb-1.5' role='button' onClick={() => handleShowIssueModal(issue)} >
                 <div className='issue-detail'>
                     <p>{issue.title}</p>
@@ -347,7 +367,7 @@ export const Kanban = () => {
             </div>
 
             <div className="kanban-div d-flex font-circular-book">
-                <div className="categories d-flex flex-column">
+                <div className="categories d-flex flex-column" onDragOver={handleDragOver} onDrop={(e) => handleOnDrop(e, 'backlog')}>
                     <div className="title">
                         Backlog
                         <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.backlog?.length || 0}</span>
@@ -365,7 +385,7 @@ export const Kanban = () => {
                         }
                     </div>
                 </div>
-                <div className="categories d-flex flex-column">
+                <div className="categories d-flex flex-column" onDragOver={handleDragOver} onDrop={(e) => handleOnDrop(e, 'selected')}>
                     <div className="title">
                         Selected For Development
                         <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.selected?.length || 0}</span>
@@ -383,7 +403,7 @@ export const Kanban = () => {
                         }
                     </div>
                 </div>
-                <div className="categories d-flex flex-column">
+                <div className="categories d-flex flex-column" onDragOver={handleDragOver} onDrop={(e) => handleOnDrop(e, 'inprogress')}>
                     <div className="title">
                         In Progress
                         <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.inprogress?.length || 0}</span>
@@ -401,7 +421,7 @@ export const Kanban = () => {
                         }
                     </div>
                 </div>
-                <div className="categories d-flex flex-column">
+                <div className="categories d-flex flex-column" onDragOver={handleDragOver} onDrop={(e) => handleOnDrop(e, 'done')}>
                     <div className="title">
                         Done
                         <span className="badge badge-pill badge-primary bg-gray-400 count ml-1">{issuesByGroup?.done?.length || 0}</span>
