@@ -395,6 +395,32 @@ app.put('/update-issue/:issueId', async (req, res) => {
                     break;
             }
         })
+        .then(async (issueDoc) => {
+            const issueWithMemberDetails = {
+                createdAt: issueDoc.createdAt,
+                priority: issueDoc.priority,
+                status: issueDoc.status,
+                title: issueDoc.title,
+                type: issueDoc.type,
+                estimate: issueDoc.estimate,
+                timeSpent: issueDoc.timeSpent,
+                updatedAt: issueDoc.updatedAt,
+                description: issueDoc.description,
+                id: issueDoc.id
+            };
+            return UserModel.findById(issueDoc.assigneeId, {name:1, defaultAvatarBgColor: 1})
+                .then((assignee) => {
+                    issueWithMemberDetails.assignee = assignee;
+                })
+                .then(() => {
+                    return UserModel.findById(issueDoc.reporterId, {name:1, defaultAvatarBgColor: 1});
+                })
+                .then((reporter) => {
+                    issueWithMemberDetails.reporter = reporter;
+                    return issueWithMemberDetails;
+                });
+
+        })
         .then((issueDoc) => {
             return res.json({updatedIssue: issueDoc});
         })

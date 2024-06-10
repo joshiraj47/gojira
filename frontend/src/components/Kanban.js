@@ -26,7 +26,7 @@ export const Kanban = () => {
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
     const {data: {data: {issues} = {}} = {}, isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false});
     const {mutate: updateIssueMutate} = useMutation({mutationFn: updateIssue, enabled: false, onSuccess: (data) => {
-            const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?._id ? { ...issue, ...data?.data?.updatedIssue } : issue));
+            const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?.id ? { ...issue, ...data?.data?.updatedIssue } : issue));
             if (data?.data?.updatedIssue) setSelectedIssueDetails(data?.data?.updatedIssue);
             groupIssuesByStatus(updatedIssues);
         }});
@@ -83,6 +83,7 @@ export const Kanban = () => {
 
     const handleShowIssueModal = (issue) => {
         setSelectedIssueDetails(issue);
+        setSelectedIssueDescription(issue.description);
         setSelectedIssueType(issue.type);
         setSelectedIssueStatus(issue.status);
         setSelectedIssuePriority(issue.priority);
@@ -121,10 +122,23 @@ export const Kanban = () => {
         }
     }
 
+    const handleSetIssueDescription = (val) => {
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {description: selectedIssueDescription}});
+        }
+    }
+
     const handleSetIssueStatus = (val) => {
         setSelectedIssueStatus(val);
         if (selectedIssueDetails) {
             updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {status: val}});
+        }
+    }
+
+    const handleSetIssuePriority = (val) => {
+        setSelectedIssuePriority(val);
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {priority: val}});
         }
     }
 
@@ -209,6 +223,11 @@ export const Kanban = () => {
                     </div>
                     <div className='desc-label'>Description
                         <div ref={ref} id="editor"></div>
+                        <button
+                            onClick={handleSetIssueDescription}
+                            className="btn btn-primary btn-sm mt-2" type="submit">
+                            Save
+                        </button>
                     </div>
 
                 </div>
@@ -240,14 +259,14 @@ export const Kanban = () => {
                         onSelect={setSelectedIssueStatus}
                     >
                         {
-                            issueStatus?.filter(status => status !== selectedIssueStatus)?.map((status) => (
-                                <Dropdown.Item
-                                    key={status}
-                                    eventKey={status}
-                                    className='uppercase p-2'>
-                                    <div className={`status-label ${status}`}>{IssueStatusEnum[status]}</div>
-                                </Dropdown.Item>
-                            ))
+                            <div className='p-2'>
+                                <div className="inputs">
+                                    <i className="fa fa-search"></i>
+                                    <input type="text"
+                                           className="form-control font-circular-book"
+                                           placeholder="Search Users..."/>
+                                </div>
+                            </div>
                         }
                     </DropdownButton>
 
@@ -268,7 +287,7 @@ export const Kanban = () => {
                                                   fontSize='15px' color={issuePriorityColor[selectedIssuePriority]}/>
                             <span className='pl-1'>{issuePriorityTypes[selectedIssuePriority]}</span></>}
                         id="dropdown-menu"
-                        onSelect={setSelectedIssuePriority}
+                        onSelect={handleSetIssuePriority}
                     >
                         {
                             issuePriorities?.filter(priority => priority !== selectedIssuePriority)?.map((priority) => (
