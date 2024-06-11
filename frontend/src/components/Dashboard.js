@@ -231,7 +231,7 @@ export const Dashboard = () => {
                                                                                 <ul className="list-group pt-1.5">
                                                                                     {
                                                                                         searchUserData?.map((user) => (
-                                                                                            <li className="list-group-item border-0 font-circular-book p-1 cursor" key={user._id} onClick={() => addUserToProject(user, project)}>
+                                                                                            <li className="list-group-item border-0 font-circular-book p-1 cursor" key={user.id} onClick={() => addUserToProject(user, project)}>
                                                                                             <InitialsAvatar
                                                                                                 className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${avatarBgColors[user.defaultAvatarBgColor]}`}
                                                                                                 key={user.name}

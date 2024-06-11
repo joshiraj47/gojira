@@ -94,8 +94,8 @@ app.get("/userProfile", (req, res) => {
     if (token) {
         jwt.verify(token, jwtSecret, {}, async (err, decryptedUserModel) => {
             if (err) throw err;
-            const {name, email, username, lastLogin, dateCreated} = await UserModel.findById(decryptedUserModel.id);
-            res.json({name, email, username, lastLogin, dateCreated});
+            const {name, email, username, lastLogin, dateCreated, id} = await UserModel.findById(decryptedUserModel.id);
+            res.json({name, email, username, lastLogin, dateCreated, id});
         });
     } else {
         res.json(null);
@@ -390,7 +390,22 @@ app.put('/update-issue/:issueId', async (req, res) => {
                 case !isNil(type):
                     return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {type, updatedAt: new Date().getTime()}}, { returnOriginal: false });
                 case !isNil(assigneeId):
-                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {assigneeId, updatedAt: new Date().getTime()}}, { returnOriginal: false });
+                    return IssueModel.findOneAndUpdate({_id: issueId}, {$set: {assigneeId, updatedAt: new Date().getTime()}}, { returnOriginal: false })
+                        .then((updatedDoc) => {
+                            return ProjectUserModel.updateOne(
+                                {
+                                    projectId: updatedDoc.projectId,
+                                    userId: assigneeId
+                                },
+                                {
+                                    $setOnInsert: {projectId: updatedDoc.projectId, userId: assigneeId}
+                                },
+                                {upsert: true}
+                            )
+                                .then(() => {
+                                    return updatedDoc;
+                                });
+                        });
                 default:
                     break;
             }

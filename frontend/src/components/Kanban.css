@@ -30,8 +30,17 @@
 .members-div {
     margin: 0 12px 0 2px;
 
-    .initials-avatar:hover {
-        border: 1px solid rgb(235, 236, 240);
+    .initials-avatar {
+        &:hover {
+            border: 1px solid rgb(235, 236, 240);
+        }
+    }
+
+    .focus-ring {
+        div {
+            border: 2px solid black;
+            box-shadow: 1px 1px 1px darkgrey;
+        }
     }
 }
 

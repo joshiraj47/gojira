@@ -5,7 +5,13 @@ import {DropdownButton} from "react-bootstrap";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {isEmpty, isNil} from "lodash/fp";
-import {getAllIssuesByProjectId, getAllProjectsWithJustNameAndId, getProject, updateIssue} from "../apiRequests";
+import {
+    getAllIssuesByProjectId,
+    getAllProjectsWithJustNameAndId,
+    getProject,
+    searchUsers,
+    updateIssue
+} from "../apiRequests";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {avatarBgColors} from "./constants/avatarBgColors";
 import {
@@ -21,6 +27,7 @@ import Modal from "react-bootstrap/Modal";
 import {faTrashCan, faXmark} from "@fortawesome/free-solid-svg-icons";
 import Quill from "quill";
 import moment from "moment";
+import {useAuth} from "./AuthProvider";
 export const Kanban = () => {
     const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["projects"], queryFn: getAllProjectsWithJustNameAndId});
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
@@ -30,9 +37,13 @@ export const Kanban = () => {
             if (data?.data?.updatedIssue) setSelectedIssueDetails(data?.data?.updatedIssue);
             groupIssuesByStatus(updatedIssues);
         }});
+    let {data: {data: {users} = {}} = {}, mutate: searchAssignees} = useMutation({mutationFn: searchUsers, enabled: false});
 
+    const {user} = useAuth();
     const [selectedProject, setSelectedProject] = useState(null);
     const [issuesByGroup, setIssuesByGroup] = useState(null);
+    const [isFilterApplied, setIsFilterApplied] = useState(false);
+    const [unfilteredIssues, setUnfilteredIssues] = useState(null);
     const [showIssueDetailsModal, setShowIssueDetailsModal] = useState(false);
     const [selectedIssueDetails, setSelectedIssueDetails] = useState(null);
     const [selectedIssueType, setSelectedIssueType] = useState(null);
@@ -40,6 +51,8 @@ export const Kanban = () => {
     const [selectedIssueStatus, setSelectedIssueStatus] = useState(null);
     const [selectedIssueDescription, setSelectedIssueDescription] = useState('');
     const [selectedIssueEstimate, setSelectedIssueEstimate] = useState(0);
+    const [selectedIssueAssignee, setSelectedIssueAssignee] = useState(null);
+    const [searchedAssignees, setSearchedAssignees] = useState(null);
     const groupIssuesByStatus = useCallback((issues) => {
         const issuesByGroup = Object.groupBy(issues, ({ status }) => status);
         setIssuesByGroup(issuesByGroup);
@@ -47,6 +60,10 @@ export const Kanban = () => {
 
     const ref = useRef(null);
     const isMounted = useRef(false);
+
+    useEffect(() => {
+        if (users) setSearchedAssignees(users);
+    }, [users]);
 
     useEffect(() => {
         if (isNil(selectedProject) && !isEmpty(projects)) {
@@ -63,6 +80,7 @@ export const Kanban = () => {
 
     useEffect(() => {
         if (issues) {
+            setUnfilteredIssues(issues);
             groupIssuesByStatus(issues);
         }
     }, [groupIssuesByStatus, issues]);
@@ -84,6 +102,7 @@ export const Kanban = () => {
     const handleShowIssueModal = (issue) => {
         setSelectedIssueDetails(issue);
         setSelectedIssueDescription(issue.description);
+        setSelectedIssueAssignee(issue.assignee);
         setSelectedIssueType(issue.type);
         setSelectedIssueStatus(issue.status);
         setSelectedIssuePriority(issue.priority);
@@ -94,7 +113,14 @@ export const Kanban = () => {
         }, 100);
     };
 
-    const handleCloseIssueModal = () => setShowIssueDetailsModal(false);
+    const handleCloseIssueModal = () => {
+        resetSearchResults();
+        setShowIssueDetailsModal(false);
+    };
+
+    const resetSearchResults = () => {
+        setSearchedAssignees([]);
+    }
 
     const handleOnDrag = (e, issue) => {
         e.dataTransfer.setData('draggedIssue', JSON.stringify(issue));
@@ -147,6 +173,39 @@ export const Kanban = () => {
         if (selectedIssueDetails) {
             updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {estimate: event?.target?.value}});
         }
+    }
+
+    const filterIssuesByMember = (member) => {
+        const filteredIssues = issues?.map(issue => [issue.assignee?._id, issue.reporter?._id].includes(member.id) && issue);
+        groupIssuesByStatus(filteredIssues);
+        setIsFilterApplied(true);
+    }
+
+    const filterRecentlyUpdatedIssues = () => {
+        const filteredIssues = issues?.map(issue => new Date().getTime() - issue.updatedAt <= 7200000 && issue); // 2 hrs recent
+        groupIssuesByStatus(filteredIssues);
+        setIsFilterApplied(true);
+    }
+
+    const handleClearFilter = () => {
+        groupIssuesByStatus(unfilteredIssues);
+        setIsFilterApplied(false);
+    }
+
+    function onSearchUser(e, issue) {
+        const searchTerm = e.target.value;
+        issue.members = [{
+            id: issue.assignee._id
+        }];
+        searchAssignees({searchTerm, selectedProject: issue});
+    }
+
+    function changeAssignee(user) {
+        setSelectedIssueAssignee(user);
+        if (selectedIssueDetails) {
+            updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {assigneeId: user._id, projectId: selectedIssueDetails}});
+        }
+        document.body.click();
     }
 
     function getIssueElement(issue) {
@@ -254,9 +313,8 @@ export const Kanban = () => {
                     <div className='issue-label'>Assignee</div>
                     <DropdownButton
                         className='status-btn'
-                        title={selectedIssueDetails?.assignee?.name || 'assignee'}
+                        title={selectedIssueAssignee?.name || 'None'}
                         id="dropdown-menu"
-                        onSelect={setSelectedIssueStatus}
                     >
                         {
                             <div className='p-2'>
@@ -264,8 +322,31 @@ export const Kanban = () => {
                                     <i className="fa fa-search"></i>
                                     <input type="text"
                                            className="form-control font-circular-book"
+                                           onChange={(event) => onSearchUser(event, selectedIssueDetails)}
                                            placeholder="Search Users..."/>
                                 </div>
+                                {
+                                    searchedAssignees &&
+                                    <div style={{
+                                        maxHeight: '200px',
+                                        overflowY: 'auto'
+                                    }}>
+                                        <ul className="list-group pt-1.5">
+                                            {
+                                                searchedAssignees?.map((user) => (
+                                                    <li className="list-group-item border-0 font-circular-book p-1 cursor" key={user._id} onClick={() => changeAssignee(user)}>
+                                                        <InitialsAvatar
+                                                            className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold ${avatarBgColors[user.defaultAvatarBgColor]}`}
+                                                            key={user.name}
+                                                            name={user.name}/>
+                                                        <span
+                                                            className='pl-1.5'>{user.name}</span>
+                                                    </li>
+                                                ))
+                                            }
+                                        </ul>
+                                    </div>
+                                }
                             </div>
                         }
                     </DropdownButton>
@@ -369,20 +450,28 @@ export const Kanban = () => {
                     <span className="flex -space-x-2 overflow-hidden">
                         {
                             selectedProject?.members?.map(member => (
-                                <InitialsAvatar
-                                    className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
-                                    key={member.name}
-                                    name={member.name}/>
+                                <div key={member.id} onClick={() => filterIssuesByMember(member)}>
+                                    <InitialsAvatar
+                                        className={`initials-avatar !w-8 !h-8 !rounded-full !ring-1 !ring-white font-semibold font-circular-book ${avatarBgColors[member.avatarBgColor]}`}
+                                        key={member.name}
+                                        name={member.name}/>
+                                </div>
                             ))
                         }
                     </span>
                 </div>
-                <button className="filter-button ml-1.5">
+                <button className="filter-button ml-1.5" onClick={() => filterIssuesByMember(user)}>
                     <span>Only My Issues</span>
                 </button>
-                <button className="filter-button ml-1.5">
+                <button className="filter-button ml-1.5" onClick={() => filterRecentlyUpdatedIssues()}>
                     <span>Recently Updated</span>
                 </button>
+                {
+                    isFilterApplied &&
+                    <button className="btn btn-secondary btn-sm ml-1.5" onClick={handleClearFilter}>
+                        <span>Clear Filter</span>
+                    </button>
+                }
             </div>
 
             <div className="kanban-div d-flex font-circular-book">
