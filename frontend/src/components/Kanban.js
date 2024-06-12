@@ -53,6 +53,7 @@ export const Kanban = () => {
     const [selectedIssueEstimate, setSelectedIssueEstimate] = useState(0);
     const [selectedIssueAssignee, setSelectedIssueAssignee] = useState(null);
     const [searchedAssignees, setSearchedAssignees] = useState(null);
+    const [searchFilterText, setSearchFilterText] = useState('');
     const groupIssuesByStatus = useCallback((issues) => {
         const issuesByGroup = Object.groupBy(issues, ({ status }) => status);
         setIssuesByGroup(issuesByGroup);
@@ -98,6 +99,11 @@ export const Kanban = () => {
             isMounted.current = true;
         }
     }, [showIssueDetailsModal]);
+
+    const switchProject = (projectId) => {
+        getProjectByIdMutate({projectId});
+        getIssues({projectId})
+    }
 
     const handleShowIssueModal = (issue) => {
         setSelectedIssueDetails(issue);
@@ -181,6 +187,17 @@ export const Kanban = () => {
         setIsFilterApplied(true);
     }
 
+    const filterIssuesByTitle = (title) => {
+        setSearchFilterText(title);
+        if (isEmpty(title)) {
+            handleClearFilter();
+        } else {
+            const filteredIssues = issues?.map(issue => issue.title.toLowerCase().includes(title.toLowerCase()) && issue);
+            groupIssuesByStatus(filteredIssues);
+            setIsFilterApplied(true);
+        }
+    }
+
     const filterRecentlyUpdatedIssues = () => {
         const filteredIssues = issues?.map(issue => new Date().getTime() - issue.updatedAt <= 7200000 && issue); // 2 hrs recent
         groupIssuesByStatus(filteredIssues);
@@ -190,6 +207,7 @@ export const Kanban = () => {
     const handleClearFilter = () => {
         groupIssuesByStatus(unfilteredIssues);
         setIsFilterApplied(false);
+        setSearchFilterText('');
     }
 
     function onSearchUser(e, issue) {
@@ -421,6 +439,7 @@ export const Kanban = () => {
                         size='sm'
                         variant='outline-info'
                         drop='start'
+                        onSelect={switchProject}
                     >
                         {
                             isFetching &&
@@ -432,8 +451,9 @@ export const Kanban = () => {
                         {
                             isSuccess && projects &&
                             projects?.map(project => (
-                                <Dropdown.Item key={project.name}
-                                               eventKey={project.name}>{project.name}</Dropdown.Item>
+                                <Dropdown.Item key={project._id}
+                                               eventKey={project._id}>{project.name}
+                                </Dropdown.Item>
                             ))
                         }
 
@@ -444,7 +464,10 @@ export const Kanban = () => {
                 <div className="search-box mr-4 w-40">
                     <i className="fa fa-search"></i>
                     <input type="text"
-                           className="form-control font-circular-book h-8 !bg-gray-100"/>
+                           className="form-control font-circular-book h-8 !bg-gray-100"
+                           value={searchFilterText}
+                           onChange={(e) => filterIssuesByTitle(e.target.value)}
+                    />
                 </div>
                 <div className='members-div d-flex'>
                     <span className="flex -space-x-2 overflow-hidden">
