@@ -1,11 +1,12 @@
 import './Kanban.css';
 import InitialsAvatar from "react-initials-avatar";
 import Dropdown from "react-bootstrap/Dropdown";
-import {DropdownButton} from "react-bootstrap";
+import {DropdownButton, OverlayTrigger, Popover} from "react-bootstrap";
 import {useMutation, useQuery} from "@tanstack/react-query";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {isEmpty, isNil} from "lodash/fp";
 import {
+    deleteIssue,
     getAllIssuesByProjectId,
     getAllProjectsWithJustNameAndId,
     getProject,
@@ -39,6 +40,10 @@ export const Kanban = () => {
             groupIssuesByStatus(updatedIssues);
         }});
     let {data: {data: {users} = {}} = {}, mutate: searchAssignees} = useMutation({mutationFn: searchUsers, enabled: false});
+    const {mutate: deleteIssueMutate} = useMutation({mutationFn: deleteIssue, enabled: false, onSuccess: (data) => {
+            handleCloseIssueModal();
+            refreshProject();
+        }});
 
     const {user} = useAuth();
     const { state } = useLocation();
@@ -225,6 +230,10 @@ export const Kanban = () => {
         setSearchFilterText('');
     }
 
+    const deleteIssueById = () => {
+        deleteIssueMutate({issueId: selectedIssueDetails.id});
+    }
+
     function onSearchUser(e, issue) {
         const searchTerm = e.target.value;
         issue.members = [{
@@ -300,9 +309,37 @@ export const Kanban = () => {
                     </div>
                 </div>
                 <div className="d-flex align-items-center">
-                    <button className="filter-button">
-                        <FontAwesomeIcon icon={faTrashCan} size='1x'/>
-                    </button>
+                    <OverlayTrigger
+                        trigger='click'
+                        placement="auto"
+                        rootClose
+                        overlay={
+                            <Popover id="popover-basic">
+                                <Popover.Body className='p-3'>
+                                    <div>
+                                        <span className='font-semibold'>Are you sure?</span>
+                                    </div>
+                                    <div className='mt-2 d-flex space-x-3'>
+                                        <button className="btn btn-outline-secondary btn-xs"
+                                                type="submit"
+                                                onClick={() => document.body.click()}
+                                        >
+                                            <span>Cancel</span>
+                                        </button>
+                                        <button onClick={deleteIssueById} className="btn btn-primary btn-xs"
+                                                type="submit">
+                                            <span>Confirm</span>
+                                        </button>
+                                    </div>
+                                </Popover.Body>
+                            </Popover>
+                        }
+                    >
+                        <button className="filter-button">
+                            <FontAwesomeIcon icon={faTrashCan} size='1x'/>
+                        </button>
+                    </OverlayTrigger>
+
                     <button className="filter-button" onClick={handleCloseIssueModal}>
                         <FontAwesomeIcon icon={faXmark} size='xl'/>
                     </button>

@@ -524,6 +524,21 @@ app.post('/create-issue', async (req, res) => {
         });
 });
 
+app.put("/delete-issue/:issueId", async (req, res) => {
+    const issueId= req?.params?.issueId;
+    if (isNil(issueId)) throw new Error('issue id cannot be null');
+    checkCookieTokenAndReturnUserData(req)
+        .then((userdata) => {
+            return IssueModel.deleteOne({_id: issueId});
+        })
+        .then(() => {
+            return res.json({issueId});
+        })
+        .catch((err) => {
+            res.status(409).send(err?.errorResponse?.errmsg);
+        });
+});
+
 function checkCookieTokenAndReturnUserData(request) {
     const {token} = request.cookies;
     return new Promise((resolve) => {

@@ -135,6 +135,18 @@ const createIssue = async ({...payload}) => {
     )
 }
 
+const deleteIssue = async ({issueId}) => {
+    const deleteIssue =  axios.put(`/delete-issue/${issueId}`);
+    return await toast.promise(
+        deleteIssue,
+        {
+            error: 'Failed to delete issue. Please try again.',
+            success: 'Issue deleted successfully',
+        },
+        {pauseOnHover: false}
+    )
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
@@ -151,5 +163,6 @@ export {
     addMemberToProject,
     deleteProject,
     getAllIssuesByProjectId,
-    createIssue
+    createIssue,
+    deleteIssue
 };
