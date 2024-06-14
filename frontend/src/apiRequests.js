@@ -123,6 +123,18 @@ const getAllIssuesByProjectId = async ({projectId}) => {
     return await axios.post(`/issues-by-project-id/${projectId}`);
 }
 
+const createIssue = async ({...payload}) => {
+    const createIssue = axios.post('/create-issue', {...payload});
+    return await toast.promise(
+        createIssue,
+        {
+            error: 'Failed to create issue. Please try again.',
+            success: 'Issue created successfully',
+        },
+        {pauseOnHover: false}
+    )
+}
+
 export {
     loginUserRequest,
     registerUserRequest,
@@ -138,5 +150,6 @@ export {
     searchUsers,
     addMemberToProject,
     deleteProject,
-    getAllIssuesByProjectId
+    getAllIssuesByProjectId,
+    createIssue
 };

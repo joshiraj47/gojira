@@ -51,7 +51,48 @@
     vertical-align: top;
     text-transform: uppercase;
     font-weight: normal;
-    font-size: 14px;
+    font-size: 13px;
     transition: all 0.1s ease 0s;
     transform: translateZ(0px);
 }
+
+.modal-content {
+    font-family: CircularStdBook, sans-serif;
+    .title {
+        padding-bottom: 15px;
+        font-size: 21px;
+    }
+
+    .label {
+        display: block;
+        padding-bottom: 5px;
+        color: rgb(94, 108, 132);
+        font-family: CircularStdMedium, sans-serif;
+        font-weight: normal;
+        font-size: 13px;
+
+    }
+
+    .form-input {
+        height: 32px;
+        width: 100%;
+        padding: 0px 7px;
+        border-radius: 3px;
+        border: 1px solid rgb(223, 225, 230);
+        color: rgb(23, 43, 77);
+        background: rgb(244, 245, 247);
+        transition: background 0.1s ease 0s;
+        font-family: CircularStdBook, sans-serif;
+        font-weight: normal;
+        font-size: 15px;
+    }
+
+    .ql-editor {
+        min-height: 100px;
+    }
+}
+.dropdown-menu {
+    width: 100% !important;
+}
+
+

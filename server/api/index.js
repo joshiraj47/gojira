@@ -94,8 +94,8 @@ app.get("/userProfile", (req, res) => {
     if (token) {
         jwt.verify(token, jwtSecret, {}, async (err, decryptedUserModel) => {
             if (err) throw err;
-            const {name, email, username, lastLogin, dateCreated, id} = await UserModel.findById(decryptedUserModel.id);
-            res.json({name, email, username, lastLogin, dateCreated, id});
+            const {name, email, username, lastLogin, dateCreated, id, defaultAvatarBgColor} = await UserModel.findById(decryptedUserModel.id);
+            res.json({name, email, username, lastLogin, dateCreated, id, defaultAvatarBgColor});
         });
     } else {
         res.json(null);
@@ -107,8 +107,8 @@ app.post("/searchUsers", (req, res) => {
     const {searchTerm, selectedProject: {members} = {}} = req.body;
     if (token && !isEmpty(searchTerm)) {
         UserModel.find({'name': {'$regex': searchTerm , '$options': 'i'}}, {name: 1, defaultAvatarBgColor: 1}).then(users => {
-            const memberIds = members.map(member => member.id);
-            users = users?.filter(user => !memberIds.includes(user.id))
+            const memberIds = members?.map(member => member.id);
+            if (memberIds) users = users?.filter(user => !memberIds?.includes(user.id));
             return res.json({users});
         });
     } else {
@@ -488,6 +488,39 @@ app.post("/issues-by-project-id/:projectId", async (req, res) => {
             val.then(() => {
                 return res.json({issues: resultIssues});
             });
+        });
+});
+
+app.post('/create-issue', async (req, res) => {
+    checkCookieTokenAndReturnUserData(req)
+        .then((user) => {
+            const {...payload} = req.body;
+            return IssueModel.create({
+                        ...payload,
+                        status: 'backlog',
+                        reporterId: user.id,
+                        updatedAt: new Date().getTime(),
+                        createdAt: new Date().getTime()
+                    });
+        })
+        .then((issueDoc) => {
+            return ProjectUserModel.updateOne(
+                {
+                    projectId: issueDoc.projectId,
+                    userId: issueDoc.assigneeId
+                },
+                {
+                    $setOnInsert: {projectId: issueDoc.projectId, userId: issueDoc.assigneeId}
+                },
+                {upsert: true}
+            )
+                .then(() => {
+                    return issueDoc;
+                });
+
+        })
+        .then((createdIssue) => {
+            res.json({createdIssue});
         });
 });
 

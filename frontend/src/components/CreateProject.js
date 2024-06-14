@@ -114,7 +114,7 @@ export const CreateProject = () => {
                     <div className="my-sm-4">
                         <button disabled={shouldDisableSubmit()}
                                 onClick={state?.projectId ? updateProject : createProject}
-                                className="btn btn-primary btn-md" type="submit">
+                                className="btn btn-primary btn-sm jiraBlue" type="submit">
                             {!state?.projectId && (!isSuccess || !isPending) && <span>{!isPending && <span>Create</span>}{isPending && <span>Creating</span>} Project</span>}
                             {state?.projectId && (!isSuccess || !isPending) && <span>{!isPending && <span>Save</span>}{isPending && <span>Saving</span>}</span>}
                             {isPending && <span className="spinner-border spinner-border-sm mx-1" role="status"></span>}

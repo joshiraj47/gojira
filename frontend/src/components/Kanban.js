@@ -28,8 +28,9 @@ import {faTrashCan, faXmark} from "@fortawesome/free-solid-svg-icons";
 import Quill from "quill";
 import moment from "moment";
 import {useAuth} from "./AuthProvider";
+import {useLocation} from "react-router-dom";
 export const Kanban = () => {
-    const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["projects"], queryFn: getAllProjectsWithJustNameAndId});
+    const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["kanban-projects"], queryFn: getAllProjectsWithJustNameAndId});
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
     const {data: {data: {issues} = {}} = {}, isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false});
     const {mutate: updateIssueMutate} = useMutation({mutationFn: updateIssue, enabled: false, onSuccess: (data) => {
@@ -40,6 +41,7 @@ export const Kanban = () => {
     let {data: {data: {users} = {}} = {}, mutate: searchAssignees} = useMutation({mutationFn: searchUsers, enabled: false});
 
     const {user} = useAuth();
+    const { state } = useLocation();
     const [selectedProject, setSelectedProject] = useState(null);
     const [issuesByGroup, setIssuesByGroup] = useState(null);
     const [isFilterApplied, setIsFilterApplied] = useState(false);
@@ -74,6 +76,13 @@ export const Kanban = () => {
     },[getIssues, getProjectByIdMutate, projects, selectedProject]);
 
     useEffect(() => {
+        if (state?.projectId) {
+            getProjectByIdMutate({projectId: state?.projectId});
+            getIssues({projectId: state?.projectId})
+        }
+    }, [getIssues, getProjectByIdMutate, state?.projectId]);
+
+    useEffect(() => {
         if (projectData?.data?.project) {
             setSelectedProject(projectData?.data?.project);
         }
@@ -103,6 +112,12 @@ export const Kanban = () => {
     const switchProject = (projectId) => {
         getProjectByIdMutate({projectId});
         getIssues({projectId})
+    }
+
+    const refreshProject = () => {
+        handleClearFilter();
+        getProjectByIdMutate({projectId: selectedProject.id});
+        getIssues({projectId: selectedProject.id})
     }
 
     const handleShowIssueModal = (issue) => {
@@ -182,7 +197,7 @@ export const Kanban = () => {
     }
 
     const filterIssuesByMember = (member) => {
-        const filteredIssues = issues?.map(issue => [issue.assignee?._id, issue.reporter?._id].includes(member.id) && issue);
+        const filteredIssues = issues?.map(issue => [issue.assignee?._id].includes(member.id) && issue);
         groupIssuesByStatus(filteredIssues);
         setIsFilterApplied(true);
     }
@@ -199,7 +214,7 @@ export const Kanban = () => {
     }
 
     const filterRecentlyUpdatedIssues = () => {
-        const filteredIssues = issues?.map(issue => new Date().getTime() - issue.updatedAt <= 7200000 && issue); // 2 hrs recent
+        const filteredIssues = issues?.map(issue => new Date().getTime() - issue.updatedAt <= 86400000 && issue); // 24 hrs recent
         groupIssuesByStatus(filteredIssues);
         setIsFilterApplied(true);
     }
@@ -432,13 +447,19 @@ export const Kanban = () => {
                 <div><h1
                     className="text-gray-700 text-2xl">{selectedProject?.name ? selectedProject.name : 'Kanban Board'}</h1>
                 </div>
-                <div>
+                <div className='modal-footer'>
+                    <button
+                        onClick={refreshProject}
+                        className="btn btn-primary btn-sm jiraBlue">
+                        <span>Refresh</span>
+                    </button>
                     <DropdownButton
                         title='Switch Project'
+                        className='pl-3'
                         id='dropdown-menu'
                         size='sm'
                         variant='outline-info'
-                        drop='start'
+                        drop='down-centered'
                         onSelect={switchProject}
                     >
                         {
