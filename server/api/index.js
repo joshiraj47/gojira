@@ -116,6 +116,18 @@ app.post("/searchUsers", (req, res) => {
     }
 });
 
+app.post("/searchProject", (req, res) => {
+    const {token} = req.cookies;
+    const {searchTerm} = req.body;
+    if (token && !isEmpty(searchTerm)) {
+        ProjectModel.find({'name': {'$regex': searchTerm , '$options': 'i'}}, {name: 1, id: "$_id", _id: 0}).then(projects => {
+            return res.json({projects});
+        });
+    } else {
+        res.json({});
+    }
+});
+
 app.get("/defaultAvatars", (req, res) => {
     const directoryPath = '../avatars';
     fs.readdir(directoryPath, (err, files) => {
@@ -194,16 +206,31 @@ app.put("/update-project/:projectId", async (req, res) => {
         });
 });
 
-app.get("/projects", (req, res) => {
+app.get("/projects", async (req, res) => {
+    let { page, pageSize } = req.query;
     let projects = [];
     let resultProjects = [];
     checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            return ProjectModel.find({}, {name:1, category: 1, creator: 1 });
+        .then(async (userData) => {
+            page = parseInt(page, 10) || 1;
+            pageSize = parseInt(pageSize, 10) || 10;
+
+            projects = await ProjectModel.aggregate([
+                {
+                    $project: {name:1, category: 1, creator: 1, id:1 }
+                },
+                {
+                    $facet: {
+                        metadata: [{ $count: 'totalCount' }],
+                        data: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }],
+                    },
+                },
+            ]);
+
+            return projects[0].data;
         })
         .then((allProjects) => {
-            projects = allProjects;
-            const projectIds = allProjects?.map((project) => project.id);
+            const projectIds = allProjects?.map((project) => project._id.valueOf());
             const query = { projectId: { $in: projectIds } };
             //find(query, {projectId: 1, userId: 1, _id: 0});
             return ProjectUserModel.aggregate([
@@ -230,11 +257,11 @@ app.get("/projects", (req, res) => {
             ])
         })
         .then((projectsUsers) => {
-            const val = projects?.reduce((prev, currentValue) => {
+            const val = projects[0]?.data?.reduce((prev, currentValue) => {
                 return prev.then(() => {
                     return new Promise(async (resolve) => {
                         const projectWithMemberDetails = {
-                            id: currentValue.id,
+                            id: currentValue._id.valueOf(),
                             name: currentValue.name,
                             category: currentValue.category,
                             creator: currentValue.creator,
@@ -242,7 +269,7 @@ app.get("/projects", (req, res) => {
 
                         let memberIdsArray = [];
                         projectsUsers.forEach((item) => {
-                            if (item.projectId === currentValue.id) {
+                            if (item.projectId === currentValue._id.valueOf()) {
                                 memberIdsArray.push(...item.users);
                             }
                         });
@@ -263,7 +290,10 @@ app.get("/projects", (req, res) => {
             }, Promise.resolve({}));
 
             val.then(() => {
-                return res.json({projects: resultProjects});
+                return res.json({projects: {
+                        metadata: { totalCount: projects[0]?.metadata[0]?.totalCount, totalPages: Math.ceil(projects[0]?.metadata[0]?.totalCount/pageSize || 0), page, pageSize },
+                        data: resultProjects,
+                    }});
             })
         })
 });

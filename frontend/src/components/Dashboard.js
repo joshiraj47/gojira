@@ -1,16 +1,21 @@
 import {OverlayTrigger, Popover, Table, Tooltip} from "react-bootstrap";
 import './Dashboard.css';
-import {useMutation, useQuery} from "@tanstack/react-query";
+import {useMutation} from "@tanstack/react-query";
 import {addMemberToProject, deleteProject, getAllProjects, searchUsers} from "../apiRequests";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import InitialsAvatar from 'react-initials-avatar';
 import {useNavigate} from "react-router-dom";
 import {isEmpty} from "lodash/fp";
 import {avatarBgColors} from "./constants/avatarBgColors";
+import {pageLimit} from "./constants/globalConstants";
+import CustomPagination from "./common/CustomPagination";
 
 export const Dashboard = () => {
     const repeat = (n) => Array.from({ length: n }, (_, i) => i);
-    const {data: {data: {projects} = {}} = {}, isSuccess, isFetching, refetch} = useQuery({queryKey: ["projects"], queryFn: getAllProjects, enabled: false});
+    const {isSuccess, isPending, mutate: fetchProjects} = useMutation({ mutationKey: ["dashboardProjects"], mutationFn: getAllProjects, enabled: false, onSuccess: (data) => {
+            setRowData(data?.data?.projects?.data);
+            setProjectMetaData(data?.data?.projects?.metadata);
+        }});
     let {data: {data: {users} = {}} = {}, mutate} = useMutation({mutationFn: searchUsers, enabled: false});
     let {mutate: addMemberMutate} = useMutation({mutationFn: addMemberToProject, enabled: false, onSuccess: (data) => setRowData(prevData =>
             prevData.map(row => (row.id === data?.data?.updatedProject?.id ? { ...row, ...data?.data?.updatedProject } : row))
@@ -22,19 +27,20 @@ export const Dashboard = () => {
                 return prevData;
             }
         )});
+    const handlePageChange = useCallback((val) => {
+        setPageNum(val);
+    }, []);
 
     const [rowData, setRowData] = useState(null);
+    const [projectMetaData, setProjectMetaData] = useState(null);
+    const [pageNum, setPageNum] = useState(1);
     const [searchUserData, setSearchUserData] = useState(null);
 
     const navigate = useNavigate();
 
     useEffect(() => {
-        refetch();
-    }, [refetch]);
-
-    useEffect(() => {
-        setRowData(projects);
-    }, [projects]);
+        fetchProjects({pageNum: pageNum, limit: pageLimit});
+    }, [pageNum, fetchProjects]);
 
     useEffect(() => {
         setSearchUserData(users);
@@ -94,16 +100,16 @@ export const Dashboard = () => {
                         </thead>
                         <tbody>
                         {
-                            isFetching &&
-                            repeat(10).map((i) => (
-                                <tr key={i} className="h-11">
+                            isPending &&
+                            repeat(11).map((i) => (
+                                <tr key={i} className="h-12">
                                     <td colSpan='5'
                                         className="loading-shimmer text-center">{i === 4 ? 'Fetching projects...' : ''}</td>
                                 </tr>
                             ))
                         }
                         {
-                            !isFetching && isSuccess && rowData &&
+                            !isPending && isSuccess && rowData &&
                             rowData.map(project => (
                                 <tr key={project.id} className="h-12 cursor">
                                     <td className="align-content-center !font-medium !text-blue-600 font-circular-book">{project.name}</td>
@@ -304,13 +310,22 @@ export const Dashboard = () => {
                             ))
                         }
                         {
-                            !isFetching && isSuccess && isEmpty(rowData) &&
+                            !isPending && isSuccess && isEmpty(rowData) &&
                             <tr className="h-12 cursor">
                             <td colSpan='5' className="text-center">No projects found...</td>
                             </tr>
                         }
                         </tbody>
                     </Table>
+
+                    {
+                        projectMetaData?.totalPages &&
+                        (
+                            <div className='d-flex justify-content-end'>
+                                <CustomPagination currentPage={pageNum} totalPages={projectMetaData?.totalPages} onPageChange={handlePageChange}></CustomPagination>
+                            </div>
+                        )
+                    }
                 </div>
             </div>
         </>

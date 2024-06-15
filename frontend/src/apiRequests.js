@@ -34,6 +34,10 @@ const searchUsers = async ({searchTerm, selectedProject}) => {
     return await axios.post('/searchUsers', {searchTerm, selectedProject});
 }
 
+const searchProject = async ({searchTerm}) => {
+    return await axios.post('/searchProject', {searchTerm});
+}
+
 const addMemberToProject = async ({userId, projectId}) => {
     const addMember = axios.post('/add-member-to-project', {userId, projectId});
     return await toast.promise(
@@ -91,8 +95,8 @@ const createProject = async ({ name, category, description, projectId }) => {
     )
 }
 
-const getAllProjects = async () => {
-    return await axios.get('/projects');
+const getAllProjects = async ({pageNum, limit}) => {
+    return await axios.get(`/projects?page=${pageNum}&pageSize=${limit}`);
 }
 
 const getAllProjectsWithJustNameAndId = async () => {
@@ -160,6 +164,7 @@ export {
     getAllProjectsWithJustNameAndId,
     getProject,
     searchUsers,
+    searchProject,
     addMemberToProject,
     deleteProject,
     getAllIssuesByProjectId,

@@ -19,14 +19,15 @@ import Quill from "quill";
 import InitialsAvatar from "react-initials-avatar";
 import {avatarBgColors} from "./constants/avatarBgColors";
 import {useAuth} from "./AuthProvider";
-import {useMutation, useQuery} from "@tanstack/react-query";
-import {createIssue, getAllProjects, searchUsers} from "../apiRequests";
+import {useMutation} from "@tanstack/react-query";
+import {createIssue, searchProject, searchUsers} from "../apiRequests";
 import {isEmpty} from "lodash/fp";
 export const ExpandableSidebar = () => {
     const [showCreateIssueModal, setShowCreateIssueModal] = useState(false);
     const {user} = useAuth();
     const navigate = useNavigate();
     let {mutate: searchAssigneesMutate} = useMutation({mutationKey: 'searchAssignee', mutationFn: searchUsers, enabled: false, onSuccess: (data) => handleSearchAssignees(data)});
+    let {mutate: searchProjectMutate} = useMutation({mutationKey: 'searchProject', mutationFn: searchProject, enabled: false, onSuccess: (data) => handleSearchProject(data)});
     const {mutate: createIsssueMutate, isPending} = useMutation({
         mutationFn: createIssue,
         onSuccess: () => {
@@ -34,7 +35,6 @@ export const ExpandableSidebar = () => {
             navigate('/kanban', { state: {projectId: selectedProject.id} });
         }
     });
-    const {data: {data: {projects} = {}} = {}, isSuccess, refetch} = useQuery({queryKey: ["issueProjects"], queryFn: getAllProjects, enabled: false});
     const [selectedProject, setSelectedProject] = useState(null);
     const [issueType, setIssueType] = useState(issueTypes[0]);
     const [issueTitle, setIssueTitle] = useState('');
@@ -46,6 +46,7 @@ export const ExpandableSidebar = () => {
         _id: user.id
     } || null);
     const [searchAssigneesData, setSearchAssigneesData] = useState(null);
+    const [searchProjectData, setSearchProjectData] = useState(null);
 
     const ref = useRef(null);
     const isMounted = useRef(false);
@@ -59,12 +60,18 @@ export const ExpandableSidebar = () => {
         setSearchAssigneesData(data?.data?.users);
     }
 
-    const handleSetSelectedProject = (project) => {
-        setSelectedProject(JSON.parse(project));
-    };
+    const handleSearchProject = (data) => {
+        setSearchProjectData(data?.data?.projects);
+    }
 
     const handleSetIssueAssignee = (assignee) => {
         setIssueAssignee(assignee);
+        resetSearchResults();
+        document.body.click();
+    };
+
+    const handleSetIssueProject = (project) => {
+        setSelectedProject(JSON.parse(project));
         resetSearchResults();
         document.body.click();
     };
@@ -74,6 +81,11 @@ export const ExpandableSidebar = () => {
         const project = selectedProject;
         project.members = [];
         searchAssigneesMutate({searchTerm, project});
+    }
+
+    const onSearchProject = (e) => {
+        const searchTerm = e.target.value;
+        searchProjectMutate({searchTerm});
     }
 
     const handleCreateIssue = () => {
@@ -90,6 +102,7 @@ export const ExpandableSidebar = () => {
 
     function resetSearchResults() {
         setSearchAssigneesData([]);
+        setSearchProjectData([]);
     }
 
     function shouldDisableSubmit() {
@@ -109,16 +122,6 @@ export const ExpandableSidebar = () => {
             isMounted.current = true;
         }
     }, [showCreateIssueModal]);
-
-    useEffect(() => {
-        refetch();
-    }, [refetch]);
-
-    useEffect(() => {
-        if (projects) {
-            setSelectedProject(projects[0]);
-        }
-    }, [projects]);
 
 
     function getModalElement() {
@@ -173,26 +176,45 @@ export const ExpandableSidebar = () => {
                         <DropdownButton
                             title={selectedProject?.name || 'Select'}
                             id="dropdown-menu"
-                            className=''
-                            onSelect={handleSetSelectedProject}
+                            className='text-sm'
+                            onSelect={handleSetIssueProject}
                         >
                             {
-                                isSuccess && projects &&
-                                projects.filter(project => project.id !== selectedProject?.id)?.map(project => (
-                                    <Dropdown.Item
-                                        key={project?.id}
-                                        eventKey={JSON.stringify(project)}
-                                        className='p-2.5'>
-                                        <span className=''>{project?.name}</span>
-                                    </Dropdown.Item>
-                                ))
+                                <div className='p-2'>
+                                    <div className="inputs">
+                                        <i className="fa fa-search"></i>
+                                        <input type="text"
+                                               className="form-control font-circular-book"
+                                               onChange={onSearchProject}
+                                               placeholder="Search Projects..."/>
+                                    </div>
+                                    {
+                                        searchProjectData &&
+                                        <div style={{
+                                            maxHeight: '200px',
+                                            overflowY: 'auto'
+                                        }}>
+                                            <ul className="m-0 pl-0 !pt-1.5">
+                                                {
+                                                    searchProjectData?.map((project) => (
+                                                        <Dropdown.Item className="list-group-item border-0 font-circular-book p-1 cursor"
+                                                            key={JSON.stringify(project)}
+                                                            eventKey={JSON.stringify(project)}>
+                                                            <span className='pl-1.5 text-md'>{project.name}</span>
+                                                        </Dropdown.Item>
+                                                    ))
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                </div>
                             }
                         </DropdownButton>
                     </div>
 
                     <label className='label mt-3.5' htmlFor='issue-type-field'>Estimate</label>
                     <div className="form-input-div">
-                        <input id="form-field-5" name="name" className="form-input" type={'number'} value={issueEstimate}
+                        <input id="form-field-5" name="name" className="form-input" type={'number'} placeholder={'0'} value={issueEstimate || ''}
                                onChange={(e) => setIssueEstimate(e.target.value)}/>
                     </div>
 
