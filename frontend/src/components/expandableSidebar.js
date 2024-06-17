@@ -41,10 +41,10 @@ export const ExpandableSidebar = () => {
     const [issueEstimate, setIssueEstimate] = useState(null);
     const [issueDescription, setIssueDescription] = useState('');
     const [issuePriority, setIssuePriority] = useState(issuePriorityTypes['low']);
-    const [issueAssignee, setIssueAssignee] = useState({
+    const [issueAssignee, setIssueAssignee] = useState(user ? {
         ...user,
-        _id: user.id
-    } || null);
+        _id: user?.id
+    } : null);
     const [searchAssigneesData, setSearchAssigneesData] = useState(null);
     const [searchProjectData, setSearchProjectData] = useState(null);
 
