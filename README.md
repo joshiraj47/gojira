@@ -3,6 +3,10 @@
   <a href="https://gojira-ui.vercel.app">Visit the live app</a>
 </h3>
 
+
+https://github.com/joshiraj47/gojira/assets/26250131/cfd6f312-8746-455e-9bd1-12d781de396a
+
+
 <h2>Features</h2>
 - Developed a user friendly and easy to use UI in modern React framework using functional components with Create React App (CRA).<br>
 - Uses react local state management tools like redux.<br>
