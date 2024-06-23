@@ -1,0 +1,21 @@
+.comment-editor {
+    .ql-container {
+        border: 0 !important;
+
+        &:focus-within {
+            border: 1px solid #ccc !important;
+        }
+    }
+    .ql-editor {
+        padding: 0 !important;
+        width: 23.5vw !important;
+        overflow-y: auto !important;
+        min-height: auto !important;
+        height: auto !important;
+
+        &:focus-within {
+            padding: 8px 9px !important;
+        }
+    }
+}
+

@@ -6,12 +6,16 @@ import {useMutation, useQuery} from "@tanstack/react-query";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {isEmpty, isNil} from "lodash/fp";
 import {
+    addIssueComment,
     deleteIssue,
+    deleteIssueComment,
     getAllIssuesByProjectId,
     getAllProjectsWithJustNameAndId,
+    getIssueComments,
     getProject,
     searchUsers,
-    updateIssue
+    updateIssue,
+    updateIssueComment
 } from "../apiRequests";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {avatarBgColors} from "./constants/avatarBgColors";
@@ -30,6 +34,7 @@ import Quill from "quill";
 import moment from "moment";
 import {useAuth} from "./AuthProvider";
 import {useLocation} from "react-router-dom";
+import DynamicQuillContainer from "./common/CommentEditor";
 export const Kanban = () => {
     const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["kanban-projects"], queryFn: getAllProjectsWithJustNameAndId});
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
@@ -44,6 +49,26 @@ export const Kanban = () => {
             handleCloseIssueModal();
             refreshProject();
         }});
+    const {mutate: addIssueCommentMutate} = useMutation({mutationFn: addIssueComment, enabled: false, onSuccess: (data) => {
+            setShowSaveCommentBtn(false);
+            if (commentQuillRef?.current?.root?.innerHTML) commentQuillRef.current.root.innerHTML = '';
+            const updatedComments = [...issueComments, data?.data?.createdComment];
+            setIssueComments(updatedComments);
+        }});
+    const {mutate: getIssueCommentsMutate, isPending: isFetchingComments} = useMutation({mutationFn: getIssueComments, enabled: false, onSuccess: (data) => {
+        setIssueComments(data?.data?.comments);
+    }});
+
+    const {mutate: updateIssueCommentMutate} = useMutation({mutationFn: updateIssueComment, enabled: false, onSuccess: (data) => {
+            const updatedIssueComments = issueComments.map(comment => (comment.id === data?.data?.updatedComment?._id ? { ...comment, ...data?.data?.updatedComment } : comment));
+            setIssueComments(updatedIssueComments);
+        }});
+
+    const {mutate: deleteIssueCommentMutate} = useMutation({mutationFn: deleteIssueComment, enabled: false, onSuccess: (data) => {
+            if (selectedIssueDetails) {
+                getIssueCommentsMutate({issueId: selectedIssueDetails?.id});
+            }
+        }});
 
     const {user} = useAuth();
     const { state } = useLocation();
@@ -52,11 +77,15 @@ export const Kanban = () => {
     const [isFilterApplied, setIsFilterApplied] = useState(false);
     const [unfilteredIssues, setUnfilteredIssues] = useState(null);
     const [showIssueDetailsModal, setShowIssueDetailsModal] = useState(false);
+    const [showSaveDescriptionBtn, setShowSaveDescriptionBtn] = useState(false);
+    const [showSaveCommentBtn, setShowSaveCommentBtn] = useState(false);
     const [selectedIssueDetails, setSelectedIssueDetails] = useState(null);
     const [selectedIssueType, setSelectedIssueType] = useState(null);
     const [selectedIssuePriority, setSelectedIssuePriority] = useState('');
     const [selectedIssueStatus, setSelectedIssueStatus] = useState(null);
     const [selectedIssueDescription, setSelectedIssueDescription] = useState('');
+    const [issueComments, setIssueComments] = useState([]);
+    const [issueCommentToAdd, setIssueCommentToAdd] = useState('');
     const [selectedIssueEstimate, setSelectedIssueEstimate] = useState(0);
     const [selectedIssueAssignee, setSelectedIssueAssignee] = useState(null);
     const [searchedAssignees, setSearchedAssignees] = useState(null);
@@ -67,6 +96,7 @@ export const Kanban = () => {
     }, []);
 
     const ref = useRef(null);
+    const commentQuillRef = useRef(null);
     const isMounted = useRef(false);
 
     useEffect(() => {
@@ -110,6 +140,28 @@ export const Kanban = () => {
                 const formattedText = ref.current?.root?.innerHTML;
                 setSelectedIssueDescription(formattedText);
             });
+
+            ref.current.on('selection-change', function(range) {
+                if (range) setShowSaveDescriptionBtn(true);
+                else setShowSaveDescriptionBtn(false);
+            });
+
+            commentQuillRef.current = new Quill(commentQuillRef.current, {
+                placeholder: 'Add a comment...',
+                theme: 'snow',
+                modules: {
+                    toolbar: false
+                }
+            });
+            commentQuillRef.current.on('text-change', function() {
+                const formattedText = commentQuillRef.current?.root?.innerHTML;
+                setIssueCommentToAdd(formattedText);
+            });
+
+            commentQuillRef.current.on('selection-change', function(range) {
+                if (range) setShowSaveCommentBtn(true);
+                else setShowSaveCommentBtn(false);
+            });
             isMounted.current = true;
         }
     }, [showIssueDetailsModal]);
@@ -133,6 +185,7 @@ export const Kanban = () => {
         setSelectedIssueStatus(issue.status);
         setSelectedIssuePriority(issue.priority);
         setSelectedIssueEstimate(issue.estimate);
+        getIssueCommentsMutate({issueId: issue.id});
         setShowIssueDetailsModal(true);
         setTimeout(() => {
             ref.current.root.innerHTML = issue.description;
@@ -177,6 +230,12 @@ export const Kanban = () => {
     const handleSetIssueDescription = (val) => {
         if (selectedIssueDetails) {
             updateIssueMutate({issueId: selectedIssueDetails?.id, payload: {description: selectedIssueDescription}});
+        }
+    }
+
+    const handleAddIssueComment = () => {
+        if (selectedIssueDetails) {
+            addIssueCommentMutate({issueId: selectedIssueDetails?.id, description: issueCommentToAdd});
         }
     }
 
@@ -232,6 +291,14 @@ export const Kanban = () => {
 
     const deleteIssueById = () => {
         deleteIssueMutate({issueId: selectedIssueDetails.id});
+    }
+
+    const onUpdateComment = (commentId, description) => {
+        updateIssueCommentMutate({commentId, description});
+    }
+
+    const onDeleteComment = (commentId) => {
+        deleteIssueCommentMutate({commentId});
     }
 
     function onSearchUser(e, issue) {
@@ -352,13 +419,56 @@ export const Kanban = () => {
                     </div>
                     <div className='desc-label'>Description
                         <div ref={ref} id="editor"></div>
-                        <button
-                            onClick={handleSetIssueDescription}
-                            className="btn btn-primary btn-sm mt-2" type="submit">
-                            Save
-                        </button>
+                        {
+                            showSaveDescriptionBtn &&
+                            <button
+                                onClick={handleSetIssueDescription}
+                                className="btn btn-primary btn-sm mt-2 jiraBlue">
+                                Save
+                            </button>
+                        }
                     </div>
+                    <div className='issue-label mt-3'>Comments</div>
+                    <div>
+                        <div ref={commentQuillRef} id="comment-editor"></div>
+                        {
+                            showSaveCommentBtn &&
+                            <button
+                                onClick={handleAddIssueComment}
+                                className="btn btn-primary btn-sm mt-2 jiraBlue">
+                                Save
+                            </button>
+                        }
+                        {
+                            !isFetchingComments && issueComments &&
+                            <div className='text-sm mt-1'>
+                                {
+                                    <div id="comment-editor" className='comment-editor'>
+                                        <DynamicQuillContainer issueComments={issueComments} onUpdateComment={onUpdateComment} onDeleteComment={onDeleteComment}/>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        {
+                            isFetchingComments &&
+                            <div className="h-[100px] mt-3 d-block">
+                                <div className='d-flex'>
+                                    <div>
+                                        <InitialsAvatar
+                                            className={`initials-avatar !w-7 !h-7 !rounded-full font-semibold font-circular-book loading-shimmer`}
+                                            name={''}/>
+                                    </div>
+                                    <div className='pl-2 d-flex flex-column'>
+                                        <div className='pb-2'>
+                                            <div className='font-circular-medium w-[80px] !h-5 loading-shimmer'></div>
+                                        </div>
+                                        <div className='font-circular-medium w-[80px] !h-[50px] loading-shimmer'></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
 
+                    </div>
                 </div>
                 <div className='pt-1.5 w-4/12'>
                     <div className='issue-label'>Status</div>

@@ -10,6 +10,8 @@ const ProjectModel = require("./models/Project");
 const ProjectUserModel = require("./models/ProjectUser");
 const {isEmpty, isNil} = require("lodash/fp");
 const IssueModel = require("./models/Issue");
+const IssueCommentModel = require("./models/IssueComments");
+const CommentModel = require("./models/Comments");
 require('dotenv').config();
 const app = express();
 
@@ -147,22 +149,16 @@ app.get("/defaultAvatars", (req, res) => {
     });
 })
 
-app.get("/userAvatar", (req, res) => {
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            return UserModel.findById(userData.id);
-        })
+app.get("/userAvatar", checkCookieTokenAndReturnUserData, (req, res) => {
+    return UserModel.findById(req.userData.id)
         .then((data) => {
             return res.json({avatar: data.avatar});
         });
 });
 
-app.put("/userAvatar/update", (req, res) => {
+app.put("/userAvatar/update", checkCookieTokenAndReturnUserData, (req, res) => {
     const {avatarName} = req.body;
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            return UserModel.findById(userData.id);
-        })
+    return UserModel.findById(req.userData.id)
         .then((data) => {
             UserModel.updateOne({email: data.email}, {$set: {avatar: avatarName}}).then((updatedDoc) => {
                 return res.json("success");
@@ -170,10 +166,9 @@ app.put("/userAvatar/update", (req, res) => {
         });
 });
 
-app.post("/create-project", async (req, res) => {
+app.post("/create-project", checkCookieTokenAndReturnUserData, async (req, res) => {
     const {name, category, description} = req.body;
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => UserModel.findById(userData.id))
+    return UserModel.findById(req.userData.id)
         .then(({name: fullName}) => {
             return ProjectModel.create({
                 name,
@@ -190,72 +185,62 @@ app.post("/create-project", async (req, res) => {
         });
 });
 
-app.put("/update-project/:projectId", async (req, res) => {
+app.put("/update-project/:projectId", checkCookieTokenAndReturnUserData, async (req, res) => {
     const id= req.projectId;
     const {name, category, description} = req.body;
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => UserModel.findById(userData.id))
-        .then(() => {
-            return ProjectModel.updateOne({id: id}, {$set: {name, category, description}})
-                .then((projectDoc) => {
-                    return res.json('update success');
-                })
-                .catch((err) => {
-                    res.status(409).send(err.errorResponse.errmsg);
-                });
+    return ProjectModel.updateOne({id: id}, {$set: {name, category, description}})
+        .then((projectDoc) => {
+            return res.json('update success');
+        })
+        .catch((err) => {
+            res.status(409).send(err.errorResponse.errmsg);
         });
 });
 
-app.get("/projects", async (req, res) => {
+app.get("/projects", checkCookieTokenAndReturnUserData, async (req, res) => {
     let { page, pageSize } = req.query;
     let projects = [];
     let resultProjects = [];
-    checkCookieTokenAndReturnUserData(req)
-        .then(async (userData) => {
-            page = parseInt(page, 10) || 1;
-            pageSize = parseInt(pageSize, 10) || 10;
+    page = parseInt(page, 10) || 1;
+    pageSize = parseInt(pageSize, 10) || 10;
 
-            projects = await ProjectModel.aggregate([
-                {
-                    $project: {name:1, category: 1, creator: 1, id:1 }
-                },
-                {
-                    $facet: {
-                        metadata: [{ $count: 'totalCount' }],
-                        data: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }],
-                    },
-                },
-            ]);
+    projects = await ProjectModel.aggregate([
+        {
+            $project: {name:1, category: 1, creator: 1, id:1 }
+        },
+        {
+            $facet: {
+                metadata: [{ $count: 'totalCount' }],
+                data: [{ $skip: (page - 1) * pageSize }, { $limit: pageSize }],
+            },
+        },
+    ]);
 
-            return projects[0].data;
-        })
-        .then((allProjects) => {
-            const projectIds = allProjects?.map((project) => project._id.valueOf());
-            const query = { projectId: { $in: projectIds } };
-            //find(query, {projectId: 1, userId: 1, _id: 0});
-            return ProjectUserModel.aggregate([
-                {
-                    $match: {
-                        projectId: { $in: projectIds }
-                    }
-                },
-                {
-                    $group: {
-                        _id: "$projectId",
-                        users: {
-                            $push: "$userId"
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        _id: 0,  // Exclude the default _id field
-                        projectId: "$_id",
-                        users: 1
-                    }
+    const projectIds = projects[0]?.data?.map((project) => project._id.valueOf());
+    const query = { projectId: { $in: projectIds } };
+    //find(query, {projectId: 1, userId: 1, _id: 0});
+    return ProjectUserModel.aggregate([
+        {
+            $match: {
+                projectId: { $in: projectIds }
+            }
+        },
+        {
+            $group: {
+                _id: "$projectId",
+                users: {
+                    $push: "$userId"
                 }
-            ])
-        })
+            }
+        },
+        {
+            $project: {
+                _id: 0,  // Exclude the default _id field
+                projectId: "$_id",
+                users: 1
+            }
+        }
+    ])
         .then((projectsUsers) => {
             const val = projects[0]?.data?.reduce((prev, currentValue) => {
                 return prev.then(() => {
@@ -295,27 +280,21 @@ app.get("/projects", async (req, res) => {
                         data: resultProjects,
                     }});
             })
-        })
-});
-
-app.get("/projects-with-name-and-id", (req, res) => {
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            return ProjectModel.find({}, {name:1 });
-        })
-        .then((projects) => {
-           res.json({projects});
         });
 });
 
-app.post("/project-by-id", (req, res) => {
+app.get("/projects-with-name-and-id", checkCookieTokenAndReturnUserData, (req, res) => {
+    return ProjectModel.find({}, {name:1 })
+        .then((projects) => {
+            res.json({projects});
+        });
+});
+
+app.post("/project-by-id", checkCookieTokenAndReturnUserData, (req, res) => {
     let result = {};
     const {projectId} = req.body;
     if (isNil(projectId)) throw new Error('project id cannot be null');
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            return ProjectModel.findById(projectId, {name:1, description: 1, category: 1 });
-        })
+    return ProjectModel.findById(projectId, {name:1, description: 1, category: 1 })
         .then((project) => {
             result = project;
             const query = { projectId };
@@ -341,19 +320,16 @@ app.post("/project-by-id", (req, res) => {
         });
 });
 
-app.post("/add-member-to-project", async (req, res) => {
+app.post("/add-member-to-project", checkCookieTokenAndReturnUserData, async (req, res) => {
     const {userId, projectId} = req.body;
     let projectUserIds = null;
     let project = null;
     let user = null;
-    checkCookieTokenAndReturnUserData(req)
-        .then((userData) => {
-            if (isEmpty(userId) || isEmpty(projectId)) throw new Error();
-            return ProjectUserModel.create({
-                projectId,
-                userId: userId,
-            })
-        })
+    if (isEmpty(userId) || isEmpty(projectId)) throw new Error();
+    return ProjectUserModel.create({
+        projectId,
+        userId: userId,
+    })
         .then(() => {
             const query = { projectId: projectId };
             return ProjectUserModel.find(query, {userId: 1, _id:0});
@@ -383,13 +359,10 @@ app.post("/add-member-to-project", async (req, res) => {
         });
 });
 
-app.put("/delete-project/:projectId", async (req, res) => {
+app.put("/delete-project/:projectId", checkCookieTokenAndReturnUserData, async (req, res) => {
     const projectId= req?.params?.projectId;
     if (isNil(projectId)) throw new Error('project id cannot be null');
-    checkCookieTokenAndReturnUserData(req)
-        .then((userdata) => {
-            return ProjectUserModel.deleteMany({projectId: projectId});
-        })
+    return ProjectUserModel.deleteMany({projectId: projectId})
         .then(() => {
             return ProjectModel.deleteOne({_id: projectId});
         })
@@ -401,12 +374,12 @@ app.put("/delete-project/:projectId", async (req, res) => {
         });
 });
 
-app.put('/update-issue/:issueId', async (req, res) => {
+app.put('/update-issue/:issueId', checkCookieTokenAndReturnUserData, async (req, res) => {
     const issueId= req.params?.issueId;
     const {payload} = req.body;
     const {estimate = null, description = null, priority = null, status = null, type = null, assigneeId = null} = payload;
     if (isNil(issueId)) throw new Error('issue id cannot be null');
-    checkCookieTokenAndReturnUserData(req)
+    Promise.resolve()
         .then(() => {
             switch (true) {
                 case !isNil(estimate):
@@ -474,14 +447,11 @@ app.put('/update-issue/:issueId', async (req, res) => {
         });
 });
 
-app.post("/issues-by-project-id/:projectId", async (req, res) => {
+app.post("/issues-by-project-id/:projectId", checkCookieTokenAndReturnUserData, async (req, res) => {
     const projectId= req?.params?.projectId;
     let resultIssues = [];
     if (isNil(projectId)) throw new Error('projectId cannot be null!!');
-    checkCookieTokenAndReturnUserData(req)
-        .then((usr) => {
-            return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1, assigneeId: 1, estimate: 1, timeSpent: 1, description: 1, reporterId: 1});
-        })
+    return IssueModel.find({projectId}, {createdAt: 1, priority: 1, status: 1, title: 1, type: 1, updatedAt: 1, assigneeId: 1, estimate: 1, timeSpent: 1, description: 1, reporterId: 1})
         .then((issues) => {
             const val = issues?.reduce((prev, currentValue) => {
                 return prev.then(() => {
@@ -521,18 +491,15 @@ app.post("/issues-by-project-id/:projectId", async (req, res) => {
         });
 });
 
-app.post('/create-issue', async (req, res) => {
-    checkCookieTokenAndReturnUserData(req)
-        .then((user) => {
-            const {...payload} = req.body;
-            return IssueModel.create({
-                        ...payload,
-                        status: 'backlog',
-                        reporterId: user.id,
-                        updatedAt: new Date().getTime(),
-                        createdAt: new Date().getTime()
-                    });
-        })
+app.post('/create-issue', checkCookieTokenAndReturnUserData, async (req, res) => {
+    const {...payload} = req.body;
+    return IssueModel.create({
+        ...payload,
+        status: 'backlog',
+        reporterId: req.userData.id,
+        updatedAt: new Date().getTime(),
+        createdAt: new Date().getTime()
+    })
         .then((issueDoc) => {
             return ProjectUserModel.updateOne(
                 {
@@ -554,13 +521,10 @@ app.post('/create-issue', async (req, res) => {
         });
 });
 
-app.put("/delete-issue/:issueId", async (req, res) => {
+app.put("/delete-issue/:issueId", checkCookieTokenAndReturnUserData, async (req, res) => {
     const issueId= req?.params?.issueId;
     if (isNil(issueId)) throw new Error('issue id cannot be null');
-    checkCookieTokenAndReturnUserData(req)
-        .then((userdata) => {
-            return IssueModel.deleteOne({_id: issueId});
-        })
+    return IssueModel.deleteOne({_id: issueId})
         .then(() => {
             return res.json({issueId});
         })
@@ -569,18 +533,120 @@ app.put("/delete-issue/:issueId", async (req, res) => {
         });
 });
 
-function checkCookieTokenAndReturnUserData(request) {
-    const {token} = request.cookies;
-    return new Promise((resolve) => {
-        if (token) {
-            jwt.verify(token, jwtSecret, {},(err, decryptedUserModel) => {
-                if (err) throw new Error(err);
-                resolve(decryptedUserModel);
+app.post("/get-comments/:issueId", checkCookieTokenAndReturnUserData, async(req, res) => {
+    const issueId= req?.params?.issueId;
+    if (!issueId) return res.json();
+    let resultComments = [];
+    return IssueCommentModel.find({issueId})
+        .then((issueComments) => {
+            const commentIdsList = issueComments?.map(obj => obj.commentId);
+            const query = { _id: { $in: commentIdsList } };
+            return CommentModel.find(query);
+        })
+        .then((comments) => {
+            const val = comments?.reduce((prev, currentValue) => {
+                return prev.then(() => {
+                    return new Promise(async (resolve) => {
+                        const commentWithCommenterDetails = {
+                            updatedAt: currentValue.updatedAt,
+                            description: currentValue.description,
+                            id: currentValue._id.valueOf()
+                        };
+
+                        await UserModel.findById(currentValue.commenterId, {name:1, defaultAvatarBgColor: 1})
+                            .then((commentor) => {
+                                commentWithCommenterDetails.commentor = commentor;
+                                resultComments.push(commentWithCommenterDetails);
+                                resolve(resultComments);
+                            });
+                    });
+                });
+            }, Promise.resolve({}));
+
+            val.then(() => {
+                return res.json({comments: resultComments});
             });
-        } else {
-            throw new Error('No token found');
-        }
-    });
+        });
+});
+
+app.post("/add-comment", checkCookieTokenAndReturnUserData, async (req, res) => {
+    const {issueId, description} = req.body;
+    let createdComment = null;
+    if (isNil(issueId)) throw new Error('issue id cannot be null');
+    return CommentModel.create({description, commenterId: req.userData.id, updatedAt: new Date().getTime()})
+        .then((commentDoc) => {
+            return IssueCommentModel.updateOne(
+                {
+                    issueId,
+                    commentId: commentDoc._id
+                },
+                {
+                    $setOnInsert: {issueId, commentId: commentDoc._id}
+                },
+                {upsert: true}
+            )
+                .then(() => {
+                    return commentDoc;
+                });
+
+        })
+        .then((createdCommentDoc) => {
+            createdComment = {
+               id: createdCommentDoc._id.valueOf(),
+               description: createdCommentDoc.description,
+               updatedAt: createdCommentDoc.updatedAt
+            };
+            return UserModel.findById(createdCommentDoc.commenterId, {name:1, defaultAvatarBgColor: 1});
+        })
+        .then((commentor) => {
+            createdComment.commentor = commentor;
+            res.json({createdComment});
+        })
+});
+
+app.put("/update-comment/:commentId", checkCookieTokenAndReturnUserData, async (req, res) => {
+    const commentId= req?.params?.commentId;
+    const {description} = req.body;
+    if (isNil(commentId)) throw new Error('comment id cannot be null');
+    return CommentModel.findOneAndUpdate({_id: commentId}, {$set: {description, updatedAt: new Date().getTime()}}, { returnOriginal: false })
+        .then((updatedComment) => {
+            res.json({updatedComment});
+        });
+});
+
+app.put("/delete-comment/:commentId", checkCookieTokenAndReturnUserData, async (req, res) => {
+    const commentId= req?.params?.commentId;
+    if (isNil(commentId)) throw new Error('comment id cannot be null');
+    return IssueCommentModel.deleteMany({commentId: commentId})
+        .then(() => {
+            return CommentModel.deleteOne({_id: commentId});
+        })
+        .then(() => {
+            return res.json({commentId});
+        })
+        .catch((err) => {
+            res.status(409).send(err?.errorResponse?.errmsg);
+        });
+});
+
+function checkCookieTokenAndReturnUserData(request, res, next) {
+    const {token} = request.cookies;
+    if (token) {
+        jwt.verify(token, jwtSecret, {},(err, decryptedUserModel) => {
+            if (err) {
+                return res
+                    .cookie("token", '', { expires: new Date(0) })
+                    .json(err);
+            }
+            request.userData = decryptedUserModel;
+            next();
+        });
+    } else {
+        return res
+            .cookie("token", '', { expires: new Date(0) })
+            .json('No token found');
+    }
+}
 }
 
 
