@@ -190,6 +190,18 @@ const deleteIssue = async ({issueId}) => {
     )
 }
 
+axios.interceptors.response.use(
+    response => {
+        // Any status code within the range of 2xx causes this function to trigger
+        if (response?.data === 'No token found'){
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+            return Promise.resolve();
+        }
+        return response;
+    },
+);
+
 export {
     loginUserRequest,
     registerUserRequest,
