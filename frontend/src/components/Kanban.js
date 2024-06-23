@@ -38,10 +38,16 @@ import DynamicQuillContainer from "./common/CommentEditor";
 export const Kanban = () => {
     const {data: {data: {projects} = {}} = {}, isSuccess, isFetching} = useQuery({queryKey: ["kanban-projects"], queryFn: getAllProjectsWithJustNameAndId});
     const {mutate: getProjectByIdMutate, data: projectData = {}} = useMutation({mutationFn: getProject, enabled: false});
-    const {data: {data: {issues} = {}} = {}, isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false});
+    const {isSuccess: issuesFetched, isPending: isFetchingIssues, mutate: getIssues} = useMutation({mutationFn: getAllIssuesByProjectId, enabled: false, onSuccess: (data) => {
+            setIssues(data?.data?.issues);
+            setUnfilteredIssues(data?.data?.issues);
+            groupIssuesByStatus(data?.data?.issues);
+        }});
     const {mutate: updateIssueMutate} = useMutation({mutationFn: updateIssue, enabled: false, onSuccess: (data) => {
             const updatedIssues = issues.map(issue => (issue.id === data?.data?.updatedIssue?.id ? { ...issue, ...data?.data?.updatedIssue } : issue));
             if (data?.data?.updatedIssue) setSelectedIssueDetails(data?.data?.updatedIssue);
+            setIssues(updatedIssues);
+            setUnfilteredIssues(updatedIssues);
             groupIssuesByStatus(updatedIssues);
         }});
     let {data: {data: {users} = {}} = {}, mutate: searchAssignees} = useMutation({mutationFn: searchUsers, enabled: false});
@@ -72,6 +78,7 @@ export const Kanban = () => {
 
     const {user} = useAuth();
     const { state } = useLocation();
+    const [issues, setIssues] = useState([]);
     const [selectedProject, setSelectedProject] = useState(null);
     const [issuesByGroup, setIssuesByGroup] = useState(null);
     const [isFilterApplied, setIsFilterApplied] = useState(false);
@@ -122,13 +129,6 @@ export const Kanban = () => {
             setSelectedProject(projectData?.data?.project);
         }
     }, [projectData?.data?.project]);
-
-    useEffect(() => {
-        if (issues) {
-            setUnfilteredIssues(issues);
-            groupIssuesByStatus(issues);
-        }
-    }, [groupIssuesByStatus, issues]);
 
     useEffect(() => {
         if (showIssueDetailsModal) {
