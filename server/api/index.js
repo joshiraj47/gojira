@@ -647,6 +647,15 @@ function checkCookieTokenAndReturnUserData(request, res, next) {
             .json('No token found');
     }
 }
+
+const checkGuestTokenAndAddExpiry = async (req, res, next) => {
+    const {guestToken} = req.cookies;
+    if (!isEmpty(guestToken)) {
+        var expires = new Date();
+        expires.setSeconds(expires.getSeconds() + GUEST_DATA_EXPIRY_TIME);
+        set('payload.expiresBy', expires, req);
+    }
+    next();
 }
 
 
