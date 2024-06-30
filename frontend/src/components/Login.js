@@ -50,7 +50,10 @@ export const Login = () => {
                                 <div className="card-body p-5 text-center">
                                     <div className="mt-md-4 pb-4">
                                         <h2 className="fw-bold mb-2 text-decoration-underline text-uppercase">Gojira</h2>
-                                        <p className="text-black-50 mb-5">Please enter your email and password!</p>
+                                        <p className="text-black-50">Please enter your email and password!</p>
+                                        <div className=" mb-5 "><span className='font-bold underline'>Email</span>: joshiraj47@gmail.com <span className='font-bold underline pl-2'>Password</span>:
+                                            raj
+                                        </div>
 
                                         <div data-mdb-input-init="" className="form-outline form-white mb-4">
                                             <input type="email" id="typeEmailX" placeholder="Email" value={email}
@@ -59,13 +62,15 @@ export const Login = () => {
                                         </div>
 
                                         <div data-mdb-input-init="" className="form-outline form-white mb-4">
-                                            <input type="password" id="typePasswordX" placeholder="Password" value={password}
+                                            <input type="password" id="typePasswordX" placeholder="Password"
+                                                   value={password}
                                                    onChange={(e) => setPass(e.target.value)}
                                                    className="form-control form-control-lg"/>
                                         </div>
 
                                         <p className="small mb-3 pb-lg-2">
-                                            <a className="text-black-50 text-secondary-emphasis" href="/">Forgot password?</a>
+                                            <a className="text-black-50 text-secondary-emphasis" href="/">Forgot
+                                                password?</a>
                                         </p>
 
                                         <button data-mdb-button-init="" data-mdb-ripple-init=""
